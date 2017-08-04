@@ -42,7 +42,7 @@ crossorigin="anonymous" means we are not sending data back to the site.
                 <!-- Plain buttons and links -->
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="?page=timeline">Characters</a>
+                        <a class="nav-link" href="index.php">Characters</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="?page=tweets">Your tweets</a>
