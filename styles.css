@@ -59,12 +59,18 @@ body {
     padding-bottom: 0.5rem;
     font-size: 85%;
 }
+/* Table of skills to be edited */
 #edit-char-skills {
-    width: 100%;
+    width: 75%;
 }
 #edit-char-skills tr td {
     padding-top: 0.5rem;
 }
+/* Add a border to every second row (which shows the specialties). */
 #edit-char-skills tr:nth-child(even) {
     border-bottom: 1px solid lightgrey;
+}
+/* Expand the first input on the rows which actually have skill data on */
+#edit-char-skills tr:nth-child(odd) td:first-child {
+    width: 50%;
 }
