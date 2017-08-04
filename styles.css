@@ -1,0 +1,70 @@
+/* Sticky footer styles, taken from Bootstrap v4 alpha
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+    margin-bottom: 60px;
+    background: /*#25254b*/ aliceblue;
+    color: /*#f8f8b8*/ darkblue;
+}
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  line-height: 60px; /* Vertically center the text there */
+  background-color: #f5f5f5;
+}
+
+
+#toggle-login {
+    margin-right: 2em;
+}
+
+/* The name on the top bar showing who is logged in. */
+.player-name {
+    color: darkblue;
+    margin-right: 10px;
+}
+
+.page-top {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+.section-space {
+    height: 4rem;
+}
+.stat-input {
+    width: 250px;
+}
+.error-list {
+    margin-bottom: 0;
+}
+.edit-char-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.edit-char-hr {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 1px solid darkblue;
+    margin-bottom: 2rem;
+}
+.edit-char-skill-specialties {
+    margin-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    font-size: 85%;
+}
+#edit-char-skills {
+    width: 100%;
+}
+#edit-char-skills tr td {
+    padding-top: 0.5rem;
+}
+#edit-char-skills tr:nth-child(even) {
+    border-bottom: 1px solid lightgrey;
+}
