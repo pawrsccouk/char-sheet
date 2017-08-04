@@ -2,6 +2,36 @@
 include("functions.php");
 include("admin.php");
 
+function update_skill($skill_info)
+{
+    global $link;
+    $query = <<<EOQ
+    UPDATE `skill` set
+    `name`   = '{$link->escape_string($skill_info->name)   }',
+    `value`  = '{$link->escape_string($skill_info->value)  }',
+    `ticks`  = '{$link->escape_string($skill_info->ticks)  }'
+    WHERE id = '{$link->escape_string($skill_info->skillid)}'
+    LIMIT 1
+EOQ;
+    $link->query($query) or die ("Query ".$query." failed.". $link->error);
+    return TRUE;
+}
+
+function insert_skill($parent_id, $skill_data)
+{
+    global $link;
+    $query = <<<EOQ
+        INSERT INTO `skill` (`name`, `value`, `ticks`, `parent`)
+        VALUES (
+            '{$link->escape_string($skill_data->name)}',
+             {$link->escape_string($skill_data->value)},
+             {$link->escape_string($skill_data->ticks)},
+             {$link->escape_string($parent_id)}
+        )
+EOQ;
+    $link->query($query) or die ("Query ".$query." failed.". $link->error);
+    return TRUE;
+}
 
 function insert_character($char_data) 
 {
@@ -28,8 +58,15 @@ function insert_character($char_data)
         )
 EOQ;
     $result = $link->query($query) or die ("Query ".$query." failed.");
-    if ($link->insert_id <= 0) { die ("link->insert_id failed."); }
-    return $link->insert_id;
+    $char_id = $link->insert_id;
+    if ($char_id <= 0) { die ("link->insert_id failed."); }
+
+    // New character, so there won't be any skills to delete or update.
+    foreach ($char_data->skillsToInsert as $skill) {
+        insert_skill($char_id, $skill);
+    }
+
+    return $char_id;
 }
 
 
@@ -56,26 +93,13 @@ EOQ;
     $link->query($query) or die ("Query ".$query." failed: ".$link->error);
     
     // Now update any skills that need it.
-    foreach ($char_data->skills as $skill) {
+    foreach ($char_data->skillsToUpdate as $skill) {
         update_skill($skill);
     }
-    
-    
-}
-
-function update_skill($skill_info)
-{
-    global $link;
-    $query = <<<EOQ
-    UPDATE `skill` set
-    `name`   = '{$link->escape_string($skill_info->name)   }',
-    `value`  = '{$link->escape_string($skill_info->value)  }',
-    `ticks`  = '{$link->escape_string($skill_info->ticks)  }'
-    WHERE id = '{$link->escape_string($skill_info->skillid)}'
-    LIMIT 1
-EOQ;
-    $link->query($query) or die ("Query ".$query." failed.". $link->error);
-    return TRUE;
+    foreach ($char_data->skillsToInsert as $skill) {
+        insert_skill($char_data->charid, $skill);
+        // TODO return JSON with the new skill IDs or reload the page.
+    }
 }
 
 function handle_actions(&$error_log)

@@ -226,7 +226,7 @@ function get_character_skills($for)
     if ($_GET and array_key_exists('charid', $_GET)) {
         $char_id = $link->escape_string($_GET['charid']);
     }
-    echo "<table id='edit-char-skills'>";
+    echo "<table id='edit-char-skills'>\n<tbody>";
     if ($char_id > 0) {
         $query = <<<EOQ
         SELECT `skill`.*, GROUP_CONCAT(CONCAT_WS(' +', `specialty`.`name`, `specialty`.`value`)) AS 'specstring'
@@ -279,7 +279,7 @@ EOH2;
             </td>
 EOH3;
             // This is where the update/remove buttons will go.
-            echo "<td><button type='button' id='char-edit-delete-$safe_id'>-</button></td>";
+            echo "<td><button type='button' id='char-edit-delete-$safe_id'>&mdash;</button></td>";
             echo "</tr>";
             
                         // This is where the specialties will appear.
@@ -293,13 +293,8 @@ EOH4;
 
         }
     }
-    echo <<<EOH5
-            <tr>
-            <td>&nbsp</td> <td>&nbsp</td> <td>&nbsp</td>
-            <td>
-                <button id='char-skill-add' type='button'>+</button>
-            </td>
-EOH5;
-    echo "</table>";
+    echo "</tbody>\n</table>\n";
+    // The button to add new table rows.
+    echo "<button id='char-skill-add' type='button'>+</button>\n";
 }
 ?>
