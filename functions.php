@@ -28,7 +28,7 @@ function show_characters()
         FROM `character`
         WHERE `player` = '{$link->escape_string($_SESSION['id'])}'
 EOQ;
-    $result = $link->query($query) or die ("Query ".$query." failed.");
+    $result = $link->query($query) or die ("Query ".$query." failed.". $link->error);
     if ($result->num_rows < 1) {
         echo "You have no characters to display.";
     } else {
@@ -54,6 +54,7 @@ EOQ;
 EOH;
         }
     }
+    $result->free();
 }
 
 function show_stat_edit($name, $value)
@@ -90,7 +91,7 @@ function get_character_attributes($for)
             SELECT `name`, `game`, `age`, `gender` FROM `character`
             WHERE id = $char_id LIMIT 1
 ESQL;
-        $result = $link->query($query) or die ("Query ".$query." failed!");
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
         if ($result->num_rows != 1) {
             die ("Query $query returned no rows.");
         }
@@ -99,6 +100,7 @@ ESQL;
         $game = htmlspecialchars($row['game']);
         $age = htmlspecialchars($row['age']);
         $gender = htmlspecialchars($row['gender']);
+        $result->free();
     } else {
         $name = "" ; $game   = "";
         $age  = "0"; $gender = "Other";
@@ -177,7 +179,7 @@ function get_character_stats($for)
             SELECT * FROM `character`
             WHERE id = $char_id LIMIT 1
 ESQL;
-        $result = $link->query($query) or die ("Query ".$query." failed!");
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
         if ($result->num_rows != 1) {
             die ("Query $query returned no rows.");
         }
@@ -190,6 +192,7 @@ ESQL;
         $intelligence = intval($row['intelligence']);
         $perception   = intval($row['perception']  );
         $luck         = intval($row['luck']        );
+        $result->free();
     } else {
         $strength     = "0";  $constitution = "0";
         $dexterity    = "0";  $speed        = "0";
@@ -226,7 +229,7 @@ function get_character_skills($for)
     if ($_GET and array_key_exists('charid', $_GET)) {
         $char_id = $link->escape_string($_GET['charid']);
     }
-    echo "<table id='edit-char-skills'>\n<tbody>";
+    echo "<table id='edit-char-skills'>\n<tbody>\n";
     if ($char_id > 0) {
         $query = <<<EOQ
         SELECT `skill`.*, GROUP_CONCAT(CONCAT_WS(' +', `specialty`.`name`, `specialty`.`value`)) AS 'specstring'
@@ -235,7 +238,7 @@ function get_character_skills($for)
         WHERE `skill`.`parent` = '$char_id'
         GROUP BY `skill`.`id`
 EOQ;
-        $result = $link->query($query) or die ("Query ".$query." failed!");
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
         while ($row = $result->fetch_assoc()) {
             $safe_id = htmlspecialchars($row['id']); // The skill ID
             $safe_value = htmlspecialchars($row['value']);
@@ -245,8 +248,8 @@ EOQ;
             if ($row['specstring']) {
                 $safe_specstring = htmlspecialchars($row['specstring']);
             }
-            echo "<tr data-skill-id='$safe_id'>";
             echo <<<EOH
+            <tr data-skill-id='$safe_id'>
             <td>
                 <label for='edit-char-skill-name-$safe_id'>Name</label>
                 <input type='text'
@@ -279,22 +282,41 @@ EOH2;
             </td>
 EOH3;
             // This is where the update/remove buttons will go.
-            echo "<td><button type='button' id='char-edit-delete-$safe_id'>&mdash;</button></td>";
-            echo "</tr>";
-            
-                        // This is where the specialties will appear.
             echo <<<EOH4
+            <td>
+                <button type='button' 
+                        class='btn btn-secondary edit-char-delete-button'
+                        id='edit-char-delete-$safe_id'
+                        data-skill-id='$safe_id'>
+                            &mdash;
+                </button>
+            </td>
+        </tr>
+EOH4;
+            
+
+            // This is where the specialties will appear.
+            echo <<<EOH5
             <tr>
                 <td colspan='4' class='edit-char-skill-specialties'>
                     $safe_specstring
                 </td>
             </tr>
-EOH4;
-
+EOH5;
         }
+        $result->free();
     }
-    echo "</tbody>\n</table>\n";
-    // The button to add new table rows.
-    echo "<button id='char-skill-add' type='button'>+</button>\n";
+    echo <<<EOH6
+    </tbody>
+    </table>
+    <!-- The button to add new table rows. -->
+    <button id='char-skill-add' 
+            class='btn btn-secondary'
+            type='button'>
+            +
+    </button>
+    
+EOH6;
 }
+
 ?>

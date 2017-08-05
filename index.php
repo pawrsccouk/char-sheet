@@ -2,6 +2,8 @@
 // Support functions
 include("functions.php");
 
+echo "<!DOCTYPE html>\n<html>\n";
+
 // Headers, content and footers from the views.
 // Stylesheets and page header information
 include("views/header.php");
@@ -41,5 +43,15 @@ END;
 }
 // Scripts and close tags.
 include("views/footer.php");
+echo "<script type='text/javascript' src='scripts/login.js'></script>\n";
+switch ($page) {
+    case 'editCharacter':
+        echo "<script type='text/javascript' src='scripts/edit-character.js'></script>\n";
+        break;
+    default:
+        break;
+}
 
+// HTML end.
+echo "</body>\n</html>\n";
 ?>

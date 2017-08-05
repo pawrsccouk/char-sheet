@@ -33,6 +33,18 @@ EOQ;
     return TRUE;
 }
 
+function delete_skill($skill_id)
+{
+    global $link;
+    $query = <<<EOQ
+        DELETE FROM `skill` 
+        WHERE `id` = {$link->escape_string($skill_id)}
+        LIMIT 1
+EOQ;
+    $link->query($query) or die ("Query ".$query." failed.". $link->error);
+    return TRUE;
+}
+
 function insert_character($char_data) 
 {
     global $link;
@@ -99,6 +111,9 @@ EOQ;
     foreach ($char_data->skillsToInsert as $skill) {
         insert_skill($char_data->charid, $skill);
         // TODO return JSON with the new skill IDs or reload the page.
+    }
+    foreach ($char_data->skillsToRemove as $skill_id) {
+        delete_skill($skill_id);
     }
 }
 
