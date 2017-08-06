@@ -38,9 +38,6 @@ body {
 .section-space {
     height: 4rem;
 }
-.stat-input {
-    width: 250px;
-}
 .error-list {
     margin-bottom: 0;
 }

@@ -67,10 +67,10 @@ function show_stat_edit($name, $value)
     }
     echo <<<END
         <!-- Game -->
-        <div class="form-group">
+        <div class="form-group col-md-2">
             <label for="$label">$safe_name</label>
             <input type="number" 
-                   class="form-control stat-input col-md-3"
+                   class="form-control stat-input"
                    id="$label"
                    $value_text
                    min="1">
