@@ -1,6 +1,23 @@
+/*globals specialties */
 
 // The IDs of skills which the user has deleted.
 let skillsToRemove = [];
+
+// The pseudo-id used to identify skills which haven't been added to the DB yet.
+// Incremented whenever we add a skill.
+let newSkillId = 0; 
+
+// The same but for specialties.
+let newSpecialtyId = 0;
+
+// The modal dialog that we show when the edit was successful.
+let successModal = $("#success-modal");
+
+// The modal dialog we show to edit specialties.
+let editSpecialtiesModal = $("#char-edit-specialties-modal");
+
+// A set of specialty IDs the user has selected for deletion.
+let specialtiesToDelete = new Set();
 
 // Javascript for actions on the Characters page.
 // Search for existing skills that have been changed since the page was generated and return a JSON array of skill attributes to change.
@@ -47,7 +64,7 @@ function skillsToInsert()
 
         // Each updates `this` to the current element each time the function is called.
         let skillToInsert = {
-            name: skillName.val(),
+            name:  skillName.val(),
             value: skillValue.val(),
             ticks: skillTicks.val()
         };
@@ -56,9 +73,53 @@ function skillsToInsert()
     return skillsToInsert;
 }
 
-let successModal = $("#success-modal");
+// This creates a new specialty row for an existing specialty, passed as `val`.
+function makeSpecialtyRow(val, skillValue)
+{
+    "use strict";
+    if (skillValue < 1) {
+        skillValue = 1;
+    }
+    return `<tr>
+<td><label for='spec-input-name-${val.id}'>Name<\label>
+<input class='form-input' id='spec-input-name-${val.id}' value='${val.name}'>
+</td>
+<td><label for='spec-input-value-${val.id}'>Value<\label>
+<input type='number' class='form-input' id='spec-input-value-${val.id}' value='${val.value}' min='1' max='${skillValue}'>
+</td>
+<td><button class='spec-input-delete-button' data-spec-id='${val.id}'>&mdash;</button>
+</td>
+</tr>`;
+}
 
-$("#char-form").submit(function () {
+// This creates a new specialty row for a new specialty.
+function makeNewSpecialtyRow(skillValue)
+{
+    "use strict";
+    if (skillValue < 1) {
+        skillValue = 1;
+    }
+    newSpecialtyId += 1;
+    let specId = newSpecialtyId;
+    return `<tr>
+<td><label for='spec-input-new-name-${specId}'>Name<\label>
+<input type='text' class='form-input' id='spec-input-new-name-${specId}' value=''
+placeholder='Specialty Name'>
+</td>
+<td><label for='spec-input-new-value-${specId}'>Value<\label>
+<input type='number' class='form-input' id='spec-input-new-value-${specId}' value='1' min='1' max='${skillValue}' placeholder='0'>
+</td>
+<td><button class='spec-input-delete-button' data-new-spec-id='${specId}'>&mdash;</button>
+</td>
+</tr>`;
+}
+
+
+// =====================================
+// Event handlers
+
+function submitEventHandler()
+{
     "use strict";
     $("#char-error-div").hide();
 
@@ -78,15 +139,16 @@ $("#char-form").submit(function () {
         lck:    $("#char-luck").val(),
         skillsToUpdate: skillsToUpdate(),
         skillsToInsert: skillsToInsert(),
-        skillsToRemove: skillsToRemove
+        skillsToRemove: skillsToRemove, 
+        specialtiesToRemove: Array.from(specialtiesToDelete.values()),
+        specialties: specialties
     };
 
-    alert(JSON.stringify(skillsToRemove));
-    
     $.post("actions.php", {
         action       : "updateCharacter",
         charData     : JSON.stringify(charAttributes)
     }, function (resultText) {
+        console.log("Update: " + resultText);
         let result = null;
         try {
             result = JSON.parse(resultText);
@@ -126,10 +188,11 @@ $("#char-form").submit(function () {
         alert(error + text);
     });
     return false; // Prevent the submit.
-});
+}
 
 // Called when the delete event is clicked, remove the requested row and store the skill ID for a future update.
-function deleteEventHandler(evt) {
+function deleteSkillEventHandler(evt) 
+{
     "use strict";
     // 'this' is the button that was clicked.
     let skillId = $(evt.target).data("skillId");
@@ -137,67 +200,171 @@ function deleteEventHandler(evt) {
         skillsToRemove.push(skillId);
     }
     // Find the row this button is on, and then delete that and the next row from the table.  (The next row is the one with the specialties on.)
-    
     let rows = $([evt.target.parentElement.parentElement, evt.target.parentElement.parentElement.nextElementSibling]);
-    console.log(rows);
     rows.remove();
 }
 
-// Bind to existing row buttons. If we add a row, we'll need to bind to that as well.
-$(".edit-char-delete-button").click(deleteEventHandler);
+// Called when the 'delete specialty row' button is clicked.
+function deleteSpecialtyEventHandler(evt)
+{
+    "use strict";
+    // If the row refers to a specialty we have loaded from the DB, then put it on a list of 'to be deleted' specialties.
+    let button = evt.target;
+    let specId = $(button).data("specId");
+    if (specId !== undefined) {
+        editSpecialtiesModal.data("specsToDelete").push(specId);
+    }
+    // Now remove the rows from the specialties table.
+    let row = $(button.parentElement.parentElement);
+    row.remove();
+}
 
+// This is called when any edit specialty button is clicked. 
+function editSpecialtyEventHandler(evt)
+{
+    "use strict";
+    // This is the array of specs which the user has chosen to delete, but has not yet pressed OK in the dialog. 
+    editSpecialtiesModal.data("specsToDelete", []);
+    
+    let editButton = evt.target;
+
+    let skillId = $(editButton).data("skillId");
+    if (skillId === undefined) {
+        skillId = $(editButton).data("newSkillId");
+    }
+
+    let skillsRow = editButton.parentElement.parentElement.previousElementSibling;
+    let skillValueInput = $(skillsRow).find("#edit-char-skill-value-" + skillId);
+    if (skillValueInput.length === 0) {
+        skillValueInput = $(skillsRow).find("#edit-char-new-skill-value-" + skillId);
+    }
+    
+    // Use the name and value to generate a title for the modal.
+    let skillNameInput = $(skillsRow).find("#edit-char-skill-name-" + skillId);
+    if (skillNameInput.length === 0) {
+        skillNameInput = $(skillsRow).find("#edit-char-new-skill-name-" + skillId);
+    }
+    editSpecialtiesModal.find(".modal-title").html("Specialties for " + skillNameInput.val() + " (" + skillValueInput.val() + ")");
+    
+    let specsTable = editSpecialtiesModal.find("tbody");
+    
+    // Attach the skill we are currently working on.
+    editSpecialtiesModal.data("skillId", skillId);
+    editSpecialtiesModal.data("skillValue", parseInt(skillValueInput.val()));
+    
+    specsTable.empty();
+    $(specialties[skillId]).each(function (index, val) {
+        //jshint unused:true
+        specsTable.append(makeSpecialtyRow(val, parseInt(skillValueInput.val())));
+    });
+    
+    // Now bind all of the 'remove specialty' buttons.
+    specsTable.find(".spec-input-delete-button").click(deleteSpecialtyEventHandler);
+    // and display the modal.
+    editSpecialtiesModal.modal();
+}
+
+function addSpecialtyToModalHandler()
+{
+    "use strict";
+    let specsTable = editSpecialtiesModal.find("tbody");
+    let skillValue = parseInt(editSpecialtiesModal.data("skillValue"));
+    specsTable.append(makeNewSpecialtyRow(skillValue));
+    // Find the last row on the table (i.e. the one we've just inserted) and bind the event handler to it's delete button.
+    let lastRow = specsTable.find("tr:last-child")[0];
+    let lastSkillRow = $(lastRow.previousElementSibling);
+    lastSkillRow.find(".spec-input-delete-button").click(deleteSpecialtyEventHandler);
+}
+
+function saveSpecialtiesEventHandler()
+{
+    "use strict";
+    
+    // For each specialty they deleted, add it to the list to be deleted.
+    let specsToDelete = editSpecialtiesModal.data("specsToDelete");
+    let skillId = parseInt(editSpecialtiesModal.data("skillId"));
+    $(specsToDelete).each(function (index, specId) { //jshint unused:true
+        specialtiesToDelete.add(specId);
+    });
+    
+    // For each row in the specialty table, find out if it was added or amended, and update it's values in the appropriate table.
+    let pendingSpecialties = [];
+
+    let specsTable = editSpecialtiesModal.find("tbody");
+    let tableRows = specsTable.find("tr");
+    tableRows.each(function (index, tr) { // jshint unused:true
+        let inputs = $(tr).find("td input");
+        let nameInput  = $(inputs[0]);
+        let valueInput = $(inputs[1]);
+        let spec = { name: nameInput.val(), value: parseInt(valueInput.val()) };
+
+        let specId = $(tr).find("td button").data("specId");
+        if (specId !== undefined) {
+            spec.id = specId;
+        }
+        pendingSpecialties.push(spec);
+    });
+    specialties[skillId] = pendingSpecialties;
+    
+    // Update the summary text under the skill.
+    let specialtiesText = pendingSpecialties.map((s) => s.name + " +" + s.value).join(',');
+    let specsRow = $("#edit-char-skill-specialties-" + skillId);
+    if (specsRow.length === 0) {
+        specsRow = $("#edit-char-skill-new-specialties-" + skillId);
+    }
+    specsRow.find(".specialty-summary").html(specialtiesText);
+    
+    editSpecialtiesModal.modal('hide');
+}
 
 // When the 'add skill' button is clicked, add a new row to the table with defaults for the values.
 
-let newSkillId = 0; // The pseudo-id used to keep new skill rows unique.
-$("#char-skill-add").click(function () {
+function addSkillEventHandler() 
+{
     "use strict";
     newSkillId += 1;
     let addHTML = `
-<tr data-new-skill-id='${newSkillId}'>
-<td>
-<label for='edit-char-new-skill-name-${newSkillId}'>Name</label>
-<input type='text'
-class='form-control'
-id='edit-char-new-skill-name-${newSkillId}'
-value=''
-placeholder='Skill name'>
+<tr data-new-skill-id='${newSkillId}' id='edit-char-skill-new-specialties-${newSkillId}'>
+<td><label for='edit-char-new-skill-name-${newSkillId}'>Name</label>
+<input type='text' class='form-control' value='' placeholder='Skill name'
+id='edit-char-new-skill-name-${newSkillId}'>
 </td>
-<td>
-<label for='edit-char-new-skill-value-${newSkillId}'>Value</label>
-<input type='number'
-class='form-control'
-id='edit-char-new-skill-value-${newSkillId}'
-value='0'
-placeholder='0'>
 
+<td><label for='edit-char-new-skill-value-${newSkillId}'>Value</label>
+<input type='number' class='form-control' value='0' placeholder='0'
+id='edit-char-new-skill-value-${newSkillId}'>
 </td>
-<td>
-<label for='edit-char-new-skill-ticks-${newSkillId}'>Ticks</label>
-<input type='number'
-class='form-control'
-id='edit-char-new-skill-ticks-${newSkillId}'
-value='0'
-placeholder='0'>
+
+<td><label for='edit-char-new-skill-ticks-${newSkillId}'>Ticks</label>
+<input type='number' class='form-control' value='0' placeholder='0'
+id='edit-char-new-skill-ticks-${newSkillId}'>
 </td>
-<td>
-<button type='button' id='char-edit-delete-new-${newSkillId}'
-class='btn btn-secondary edit-char-delete-button'>
-&mdash;
-</button>
+
+<td><button type='button' id='char-edit-delete-new-${newSkillId}'
+class='btn btn-secondary edit-char-delete-button'>&mdash;</button>
 </td>
 </tr>
-<!-- The (empty) row for the specialties -->
-<tr>
-<td colspan='4'>&nbsp;</td>
-</tr>
+
+<tr><td colspan='4'><button type='button' class='btn btn-secondary edit-spec-button' 
+data-new-skill-id='${newSkillId}'>Edit</button><span class="specialty-summary"></span></td></tr>
 `;
     // Append the HTML
     $("#edit-char-skills tbody:last-child").append(addHTML);
-    
+
     // Find the last 'remove skill' button on the table (i.e. the one we've just inserted) and bind the event handler to it.
     let lastRow = $("#edit-char-skills tbody tr:last-child")[0];
+    $(lastRow).find("td .edit-spec-button").click(editSpecialtyEventHandler);
     let lastSkillRow = $(lastRow.previousElementSibling);
-    lastSkillRow.find(".edit-char-delete-button").click(deleteEventHandler);
-});
+    lastSkillRow.find(".edit-char-delete-button").click(deleteSkillEventHandler);
+}
 
+// =======================================
+// Top-level bindings to controls.
+
+$("#char-form").submit(submitEventHandler);
+$("#char-skill-add").click(addSkillEventHandler);
+editSpecialtiesModal.find("#edit-char-specialty-add").click(addSpecialtyToModalHandler);
+editSpecialtiesModal.find("#edit-char-specialties-save").click(saveSpecialtiesEventHandler);
+// Bind to existing row buttons. If we add a row, we'll need to bind to that as well.
+$(".edit-char-delete-button").click(deleteSkillEventHandler);
+$(".edit-spec-button").click(editSpecialtyEventHandler);

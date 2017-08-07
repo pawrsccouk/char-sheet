@@ -71,3 +71,8 @@ body {
 #edit-char-skills tr:nth-child(odd) td:first-child {
     width: 50%;
 }
+.edit-spec-button {
+    padding: 1px 10px;
+    padding-top: 2px;
+    margin-right: 2em;
+}

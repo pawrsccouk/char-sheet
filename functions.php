@@ -78,14 +78,19 @@ function show_stat_edit($name, $value)
 END;
 }
 
+// Retrieve the character ID from the 'GET' variables, or 0 if it is not found.
+function get_char_id()
+{
+    if ($_GET and array_key_exists('charid', $_GET)) {
+        return intval($_GET['charid']);
+    }
+    return 0;
+}
 
 function get_character_attributes($for) 
 {
     global $link;
-    $char_id = 0;
-    if ($_GET and array_key_exists('charid', $_GET)) {
-        $char_id = $_GET['charid'];
-    }
+    $char_id = get_char_id();
     if ($char_id > 0) {
         $query = <<<ESQL
             SELECT `name`, `game`, `age`, `gender` FROM `character`
@@ -170,10 +175,7 @@ EOS;
 function get_character_stats($for) 
 {
     global $link;
-    $char_id = 0;
-    if ($_GET and array_key_exists('charid', $_GET)) {
-        $char_id = $_GET['charid'];
-    }
+    $char_id = get_char_id();
     if ($char_id > 0) {
         $query = <<<ESQL
             SELECT * FROM `character`
@@ -225,11 +227,7 @@ EOQ2;
 function get_character_skills($for)
 {
     global $link;
-    $char_id = 0;
-    if ($_GET and array_key_exists('charid', $_GET)) {
-        $char_id = $link->escape_string($_GET['charid']);
-    }
-    echo "<table id='edit-char-skills'>\n<tbody>\n";
+    $char_id = get_char_id();
     if ($char_id > 0) {
         $query = <<<EOQ
         SELECT `skill`.*, GROUP_CONCAT(CONCAT_WS(' +', `specialty`.`name`, `specialty`.`value`)) AS 'specstring'
@@ -240,10 +238,10 @@ function get_character_skills($for)
 EOQ;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
         while ($row = $result->fetch_assoc()) {
-            $safe_id = htmlspecialchars($row['id']); // The skill ID
+            $safe_id    = htmlspecialchars($row['id']   ); // The skill ID
             $safe_value = htmlspecialchars($row['value']);
             $safe_ticks = htmlspecialchars($row['ticks']);
-            $safe_name = htmlspecialchars($row['name']);
+            $safe_name  = htmlspecialchars($row['name'] );
             $safe_specstring = "&nbsp;";
             if ($row['specstring']) {
                 $safe_specstring = htmlspecialchars($row['specstring']);
@@ -281,7 +279,7 @@ EOH2;
                        data-original-value='$safe_ticks'>
             </td>
 EOH3;
-            // This is where the update/remove buttons will go.
+            // Add a delete button at the end of each row.
             echo <<<EOH4
             <td>
                 <button type='button' 
@@ -298,25 +296,51 @@ EOH4;
             // This is where the specialties will appear.
             echo <<<EOH5
             <tr>
-                <td colspan='4' class='edit-char-skill-specialties'>
-                    $safe_specstring
+                <td colspan='4' class='edit-char-skill-specialties' id='edit-char-skill-specialties-$safe_id'>
+                    <button type='button' 
+                            class='btn btn-secondary edit-spec-button'
+                            data-skill-id='$safe_id'>
+                        Edit
+                    </button>
+                    <span class="specialty-summary">$safe_specstring</span>
                 </td>
             </tr>
 EOH5;
         }
         $result->free();
     }
-    echo <<<EOH6
-    </tbody>
-    </table>
-    <!-- The button to add new table rows. -->
-    <button id='char-skill-add' 
-            class='btn btn-secondary'
-            type='button'>
-            +
-    </button>
-    
-EOH6;
+}
+
+// Returns the current specialties as a JSON-string, so we can work with them in the JavaScript.
+function get_all_specialties($for)
+{
+    global $link;
+    $char_id = get_char_id();
+    if ($char_id > 0) {
+        $query = <<<ESQL
+            SELECT `skill`.`id` as 'skillid', 
+            `specialty`.`id` as 'specid',
+            `specialty`.`name`, 
+            `specialty`.`value` 
+            FROM `skill` 
+            INNER JOIN `specialty` ON (`skill`.id = `specialty`.`parent`)
+            WHERE `skill`.`parent` = $char_id
+ESQL;
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
+        $spec_data = array();
+        while ($row = $result->fetch_assoc()) {
+            $new_spec = array('id'    => $row['specid'], 
+                              'name'  => $row['name'], 
+                              'value' => $row['value']);
+            if (array_key_exists($row['skillid'], $spec_data)) {
+                $spec_data[$row['skillid']][] = $new_spec;
+            } else {
+                $spec_data[$row['skillid']] = array($new_spec);
+            }
+        }
+        $result->free();
+        echo json_encode($spec_data);
+    }
 }
 
 ?>

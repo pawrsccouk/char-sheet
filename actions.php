@@ -7,10 +7,10 @@ function update_skill($skill_info)
     global $link;
     $query = <<<EOQ
     UPDATE `skill` set
-    `name`   = '{$link->escape_string($skill_info->name)   }',
-    `value`  = '{$link->escape_string($skill_info->value)  }',
-    `ticks`  = '{$link->escape_string($skill_info->ticks)  }'
-    WHERE id = '{$link->escape_string($skill_info->skillid)}'
+    `name`   = '{$link->escape_string($skill_info->name)  }',
+    `value`  = {$link->escape_string($skill_info->value)  },
+    `ticks`  = {$link->escape_string($skill_info->ticks)  }
+    WHERE id = {$link->escape_string($skill_info->skillid)}
     LIMIT 1
 EOQ;
     $link->query($query) or die ("Query ".$query." failed.". $link->error);
@@ -45,6 +45,44 @@ EOQ;
     return TRUE;
 }
 
+function delete_specialties($spec_ids)
+{
+    global $link;
+    $safe_ids = array_map(function ($id) use ($link) {
+        return $link->escape_string($id);
+    }, $spec_ids);
+    $id_clause = implode(", ", $spec_ids);
+    $query = "DELETE FROM `specialty` WHERE id in ($id_clause)";
+    $link->query($query) or die ("Query ".$query." failed: ".$link->error);
+}
+
+function update_specialty($specialty) 
+{
+    global $link;
+    $query = <<<EOQ
+        UPDATE `specialty` SET 
+        `name`  = '{$link->escape_string($specialty->name)}',
+        `value` =  {$link->escape_string($specialty->value)}
+        WHERE 
+        `id`    = {$link->escape_string($specialty->id)}
+EOQ;
+    $link->query($query) or die ("Query ".$query." failed.". $link->error);
+}
+
+function insert_specialty($specialty, $skill_id)
+{
+    global $link;
+    $query = <<<EOQ
+        INSERT INTO `specialty` (`name`, `value`, `parent`)
+        VALUES (
+            '{$link->escape_string($specialty->name)}',
+             {$link->escape_string($specialty->value)},
+             {$link->escape_string($skill_id)}
+        )
+EOQ;
+    $link->query($query) or die ("Query ".$query." failed.". $link->error);
+}
+
 function insert_character($char_data) 
 {
     global $link;
@@ -77,7 +115,9 @@ EOQ;
     foreach ($char_data->skillsToInsert as $skill) {
         insert_skill($char_id, $skill);
     }
-
+    foreach ($char_data->specialties as $specialty) {
+        insert_specialty($specialty);
+    }
     return $char_id;
 }
 
@@ -103,17 +143,29 @@ function update_character($char_data)
         LIMIT 1
 EOQ;
     $link->query($query) or die ("Query ".$query." failed: ".$link->error);
-    
+
     // Now update any skills that need it.
     foreach ($char_data->skillsToUpdate as $skill) {
         update_skill($skill);
     }
     foreach ($char_data->skillsToInsert as $skill) {
         insert_skill($char_data->charid, $skill);
-        // TODO return JSON with the new skill IDs or reload the page.
     }
     foreach ($char_data->skillsToRemove as $skill_id) {
         delete_skill($skill_id);
+    }
+    if (count($char_data->specialtiesToRemove) > 0) {
+        delete_specialties($char_data->specialtiesToRemove);
+    }
+    // $char_data->specialties is a map keying the skill ID to an array of specialties.
+    foreach ($char_data->specialties as $skill_id => $specialties) {
+        foreach ($specialties as $specialty) {
+            if (array_key_exists('id', $specialty)) {
+                update_specialty($specialty);
+            } else {
+                insert_specialty($specialty, $skill_id);
+            }
+        }
     }
 }
 
@@ -150,7 +202,7 @@ function handle_actions(&$error_log)
                 update_character($char_data);
                 return array();
             }
-            
+
         default:
             $error_log[] = "Unknown action: " . $_POST['action'];
             return NULL;
