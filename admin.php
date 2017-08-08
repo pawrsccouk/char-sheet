@@ -15,8 +15,9 @@ function is_valid_userid($user)
 
 
 // If $_POST has a valid email and password, return TRUE; otherwise return FALSE and add the problems encountered to the error log.
-function validate_user_password(&$error_log) 
+function validate_user_password()
 {
+    global $error_log;
     $user_valid = (array_key_exists('user', $_POST) and is_valid_userid($_POST['user']));
     if (!$user_valid) {
         $error_log[] = "User name ".$_POST['user']." is not valid.\n";
@@ -30,9 +31,9 @@ function validate_user_password(&$error_log)
 
 // Returns true if successful, false if not.
 // Updates err_log if there was an error.
-function signup_user($user, $password, $nice_name, &$error_log) 
+function signup_user($user, $password, $nice_name)
 {
-    global $link;
+    global $link, $error_log;
     
     // If they don't set a name to be known by, just use their login ID.
     if (!trim($nice_name)) {
@@ -68,9 +69,9 @@ EOQ;
 
 // Returns true if successful, false if not.
 // Updates err_log if there was an error.
-function login_user($user, $password, &$error_log) 
+function login_user($user, $password)
 {
-    global $link;
+    global $link, $error_log;
     $query = <<<EOQ
     SELECT * FROM `player` 
     WHERE `login_name` = '{$link->escape_string($user)}'

@@ -1,11 +1,11 @@
 <?php
 include("functions.php");
-include("admin.php");
 
 // This will accumulate all the errors during function calls.
 // It will be converted to JSON and sent back to the caller.
 $error_log = array();
 
+include("admin.php");
 
 function update_skill($skill_info)
 {
