@@ -2,9 +2,14 @@
 include("functions.php");
 include("admin.php");
 
+// This will accumulate all the errors during function calls.
+// It will be converted to JSON and sent back to the caller.
+$error_log = array();
+
+
 function update_skill($skill_info)
 {
-    global $link;
+    global $link, $error_log;
     $query = <<<EOQ
     UPDATE `skill` SET
     `name`   = '{$link->escape_string($skill_info->name)  }',
@@ -13,7 +18,10 @@ function update_skill($skill_info)
     WHERE id = {$link->escape_string($skill_info->skillid)}
     LIMIT 1
 EOQ;
-    $link->query($query) or die ("Query ".$query." failed.". $link->error);
+    if (!$link->query($query)) {
+        $error_log[]  = "Query ".$query." failed.". $link->error;
+        return FALSE; // Failed.
+    }
     
     // Now insert or update the specialties.
     foreach ($skill_info->specialties as $spec) {
@@ -35,13 +43,17 @@ EOQ2;
             )
 EOQ3;
         }
-        $link->query($query_spec) or die ("Query ".$query_spec." failed: ".$link->error);
+        if (!$link->query($query_spec)) {
+            $error_log[] = "Query ".$query_spec." failed: ".$link->error;
+            return FALSE;
+        }
     }
+    return TRUE; // Success!
 }
 
 function insert_skill($parent_id, $skill_data)
 {
-    global $link;
+    global $link, $error_log;
     $query = <<<EOQ
         INSERT INTO `skill` (`name`, `value`, `ticks`, `parent`)
         VALUES (
@@ -51,11 +63,14 @@ function insert_skill($parent_id, $skill_data)
              {$link->escape_string($parent_id)}
         )
 EOQ;
-    $link->query($query) or die ("Query ".$query." failed.". $link->error);
+    if (!$link->query($query)) {
+        $error_log[] = "Query ".$query." failed.". $link->error;
+        return FALSE;
+    }
+
     // Insert all the specialties attached to that skill
     // (It's a new skill, so there won't be any to update.)
     $skill_id = $link->insert_id;
-    //echo "<p>"; print_r($skill_data->specialties); echo "</p>";
     foreach ($skill_data->specialties as $specialty) {
         $query = <<<EOQ2
         INSERT INTO `specialty` (`name`, `value`, `parent`)
@@ -65,21 +80,27 @@ EOQ;
             {$link->escape_string($skill_id)}
         )
 EOQ2;
-        $link->query($query) or die ("Query ".$query." failed: ".$link->error);
+        if (!$link->query($query)) {
+            $error_log[] = "Query ".$query." failed: ".$link->error;
+            return FALSE;
+        }
     }
-    
+    return TRUE; // Success.
 }
 
 function delete_skill($skill_id)
 {
-    global $link;
+    global $link, $error_log;
     
     // Delete all the specialties associated with the skill
     $query_spec = <<<EOQ
         DELETE FROM `specialty`
         WHERE `parent` = {$link->escape_string($skill_id)}
 EOQ;
-    $link->query($query_spec) or die("Query ".$query_spec." failed.".$link->error);
+    if (!$link->query($query_spec)) {
+        $error_log[] = "Query ".$query_spec." failed.".$link->error;
+        return FALSE;
+    }
     
     // and then delete the skill itself.
     $query_skill = <<<EOQ2
@@ -87,24 +108,31 @@ EOQ;
         WHERE `id` = {$link->escape_string($skill_id)}
         LIMIT 1
 EOQ2;
-    $link->query($query_skill) or die ("Query ".$query_skill." failed.".$link->error);
-    return TRUE;
+    if (!$link->query($query_skill)) {
+        $error_log[] = "Query ".$query_skill." failed.".$link->error;
+        return FALSE;
+    }
+    return TRUE; // Success.
 }
 
 function delete_specialties($spec_ids)
 {
-    global $link;
+    global $link, $error_log;
     $safe_ids = array_map(function ($id) use ($link) {
         return $link->escape_string($id);
     }, $spec_ids);
     $id_clause = implode(", ", $spec_ids);
     $query = "DELETE FROM `specialty` WHERE id in ($id_clause)";
-    $link->query($query) or die ("Query ".$query." failed: ".$link->error);
+    if (!$link->query($query)) {
+        $error_log[] = "Query ".$query." failed: ".$link->error;
+        return FALSE;
+    }
+    return TRUE;
 }
 
 function insert_character($char_data) 
 {
-    global $link;
+    global $link, $error_log;
     $query = <<<EOQ
         INSERT INTO `character` (
             `name`, `game`, `age`, `gender`, `player`,
@@ -126,22 +154,32 @@ function insert_character($char_data)
             '{$link->escape_string($char_data->lck)}' 
         )
 EOQ;
-    $result = $link->query($query) or die ("Query ".$query." failed.");
+    $result = $link->query($query);
+    if (!$result) {
+        $error_log[] = "Query ".$query." failed:".$link->error;
+        return NULL; // Failure
+    }
+
     $char_id = $link->insert_id;
-    if ($char_id <= 0) { die ("link->insert_id failed."); }
+    if ($char_id <= 0) {
+        $error_log[] = "\$link->insert_id failed.";
+        return NULL; // Failure
+    }
 
     // New character, so there won't be any skills to delete or update.
     foreach ($char_data->skillsToInsert as $skill) {
         // This also inserts specialties.
-        insert_skill($char_id, $skill);
+        if (!insert_skill($char_id, $skill)) {
+            return NULL; // Failure
+        }
     }
-    return $char_id;
+    return $char_id; // Success.
 }
 
 
 function update_character($char_data) 
 {
-    global $link;
+    global $link, $error_log;
     $query = <<<EOQ
         UPDATE `character` set
           `name`         = '{$link->escape_string($char_data->name)}',
@@ -159,31 +197,42 @@ function update_character($char_data)
         WHERE id = '{$link->escape_string($char_data->charid)}' 
         LIMIT 1
 EOQ;
-    $link->query($query) or die ("Query ".$query." failed: ".$link->error);
+    if (!$link->query($query)) {
+        $error_log[] = "Query ".$query." failed: ".$link->error;
+        return FALSE;
+    }
 
     // The skillsToUpdate/Insert/Delete are maps with skill ID as the key and name/value/ticks/specialties as the attributes.
     
     // Now update any skills that need it.
     foreach ($char_data->skillsToUpdate as $skill) {
-        update_skill($skill);
+        if (!update_skill($skill)) {
+            return FALSE;
+        }
     }
-    
     foreach ($char_data->skillsToInsert as $skill) {
-        insert_skill($char_data->charid, $skill);
+        if (!insert_skill($char_data->charid, $skill)) {
+            return FALSE;
+        }
     }
-    
     // I included the specialties for completeness, but really all we need are the skill IDs which are the keys.
     foreach (array_keys($char_data->skillsToRemove) as $skill_id) {
-        delete_skill($skill_id);
+        if (!delete_skill($skill_id)) {
+            return FALSE;
+        }
     }
-    
     if (count($char_data->specialtiesToRemove) > 0) {
-        delete_specialties($char_data->specialtiesToRemove);
+        if (!delete_specialties($char_data->specialtiesToRemove)) {
+            return FALSE;
+        }
     }
+    return TRUE; // Success!
 }
 
-function handle_actions(&$error_log)
+function handle_actions()
 {
+    global $error_log, $link;
+
     // This is where we handle all the actions sent from the main pages
     // e.g. log in/out, send tweet etc.
     if (!$_POST) {
@@ -209,12 +258,34 @@ function handle_actions(&$error_log)
         case "updateCharacter":
             // Character data is passed as a JSON object.
             $char_data = json_decode($_POST['charData']);
-            if ($char_data->charid == 0) {
-                return array('charid' => insert_character($char_data));
-            } else {
-                update_character($char_data);
-                return array();
+
+            $link->autocommit(FALSE);
+            if (!$link->begin_transaction()) {
+                $error_log[] = "Transaction error:".$link->error;
+                return NULL;
             }
+
+            // If the insert/update was successful, return an array which may include the character ID (for new inserts). If it failed, return NULL.
+            if ($char_data->charid == 0) {
+                $char_id = insert_character($char_data);
+                $result = ($char_id === NULL) ? NULL: array('charid' => $char_id);
+            } else {
+                $success = update_character($char_data);
+                $result = $success ? array() : NULL;
+            }
+            if ($result === NULL) {
+                $error_log[] = "All changes rolled back.";
+                if (!$link->rollback()) {
+                    $error_log[] = "Rollback failed: ".$link->error;
+                }
+            } else {
+                if (!$link->commit()) {
+                    $error_log[] = "Commit failed: ".$link->error;
+                }
+            }
+
+            $link->autocommit(TRUE);
+            return $result;
 
         default:
             $error_log[] = "Unknown action: " . $_POST['action'];
@@ -222,8 +293,7 @@ function handle_actions(&$error_log)
     }
 }
 
-$error_log = array();
-$json_result = handle_actions($error_log);
+$json_result = handle_actions();
 if ($json_result === NULL) {
     $json_str = json_encode(array('success' => FALSE, 'errors' => $error_log));
 } else {
