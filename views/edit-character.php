@@ -90,8 +90,3 @@
         </div>
     </div>
 </div>
-
-
-<script type='text/javascript'>
-    let specialties = <?php echo get_all_specialties('edit') ?>
-</script>

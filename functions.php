@@ -230,24 +230,59 @@ function get_character_skills($for)
     $char_id = get_char_id();
     if ($char_id > 0) {
         $query = <<<EOQ
-        SELECT `skill`.*, GROUP_CONCAT(CONCAT_WS(' +', `specialty`.`name`, `specialty`.`value`)) AS 'specstring'
+        SELECT `skill`.`id` as 'skill_id',
+        `skill`.`name` as 'skill_name',
+        `skill`.`value` as 'skill_value',
+        `skill`.`ticks` as 'skill_ticks',
+        `specialty`.`id` as 'specialty_id',
+        `specialty`.`name` as 'specialty_name',
+        `specialty`.`value` as 'specialty_value'
         FROM `skill`
         LEFT OUTER JOIN `specialty` ON (`specialty`.`parent` = `skill`.`id`)
         WHERE `skill`.`parent` = '$char_id'
-        GROUP BY `skill`.`id`
+        ORDER BY `skill`.`id` ASC
 EOQ;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
+        $current_skill_id = 0;
+        $specs = [];
+        $last_skill = [];
+        $the_skills = [];
         while ($row = $result->fetch_assoc()) {
-            $safe_id    = htmlspecialchars($row['id']   ); // The skill ID
-            $safe_value = htmlspecialchars($row['value']);
-            $safe_ticks = htmlspecialchars($row['ticks']);
-            $safe_name  = htmlspecialchars($row['name'] );
-            $safe_specstring = "&nbsp;";
-            if ($row['specstring']) {
-                $safe_specstring = htmlspecialchars($row['specstring']);
+            $skill_id = $row['skill_id'];
+            if (! array_key_exists($skill_id, $the_skills)) {
+                $skill_data = [
+                    'id'          => $skill_id,
+                    'name'        => $row['skill_name'],
+                    'value'       => $row['skill_value'],
+                    'ticks'       => $row['skill_ticks'],
+                    'specialties' => []
+                ];
+                $the_skills[$skill_id] = $skill_data;
             }
+            if ($row['specialty_name'] !== NULL) {
+                $the_skills[$skill_id]['specialties'][] = [
+                    'id'    => $row['specialty_id'],
+                    'name'  => $row['specialty_name'],
+                    'value' => $row['specialty_value']
+                ];
+            }
+        }
+        $result->free();
+
+
+        foreach ($the_skills as $skill_id => $skill_data) {
+            $safe_id    = htmlspecialchars($skill_data['id']   ); // The skill ID
+            $safe_value = htmlspecialchars($skill_data['value']);
+            $safe_ticks = htmlspecialchars($skill_data['ticks']);
+            $safe_name  = htmlspecialchars($skill_data['name'] );
+            $specs_json = json_encode((object)['array' => $skill_data['specialties']]);
+            $specs_string = implode(", ", array_map(function ($spec) {
+                return $spec['name']." +".$spec['value'];
+            }, $skill_data['specialties']));
+            $safe_specialties = htmlspecialchars($specs_string);
+            echo "\n";
             echo <<<EOH
-            <tr data-skill-id='$safe_id'>
+            <tr data-skill-id='$safe_id' data-specialties='$specs_json' id='edit-char-skill-row-$safe_id'>
             <td>
                 <label for='edit-char-skill-name-$safe_id'>Name</label>
                 <input type='text'
@@ -255,7 +290,7 @@ EOQ;
                        id='edit-char-skill-name-$safe_id'
                        value='$safe_name'
                        data-original-value='$safe_name'>
-            </td>
+            </td>\n
 EOH;
             echo <<< EOH2
             <td>
@@ -266,7 +301,7 @@ EOH;
                        placeholder='0'
                        value='$safe_value'
                        data-original-value='$safe_value'>
-            </td>
+            </td>\n
 EOH2;
             echo <<< EOH3
             <td>
@@ -277,7 +312,7 @@ EOH2;
                        placeholder='0'
                        value='$safe_ticks'
                        data-original-value='$safe_ticks'>
-            </td>
+            </td>\n
 EOH3;
             // Add a delete button at the end of each row.
             echo <<<EOH4
@@ -289,9 +324,8 @@ EOH3;
                             &mdash;
                 </button>
             </td>
-        </tr>
+        </tr>\n
 EOH4;
-            
 
             // This is where the specialties will appear.
             echo <<<EOH5
@@ -302,19 +336,21 @@ EOH4;
                             data-skill-id='$safe_id'>
                         Edit
                     </button>
-                    <span class="specialty-summary">$safe_specstring</span>
+                    <span class="specialty-summary">$safe_specialties</span>
                 </td>
-            </tr>
+            </tr>\n
 EOH5;
         }
-        $result->free();
     }
 }
 
+/*
 // Returns the current specialties as a JSON-string, so we can work with them in the JavaScript.
 function get_all_specialties($for)
 {
     global $link;
+    $spec_data = [];
+
     $char_id = get_char_id();
     if ($char_id > 0) {
         $query = <<<ESQL
@@ -327,7 +363,6 @@ function get_all_specialties($for)
             WHERE `skill`.`parent` = $char_id
 ESQL;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
-        $spec_data = array();
         while ($row = $result->fetch_assoc()) {
             $new_spec = array('id'    => $row['specid'], 
                               'name'  => $row['name'], 
@@ -339,8 +374,9 @@ ESQL;
             }
         }
         $result->free();
-        echo json_encode($spec_data);
     }
+    echo json_encode((object)$spec_data);
 }
+*/
 
 ?>
