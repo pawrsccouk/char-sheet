@@ -1,6 +1,10 @@
 <?php
 // This is loaded at the start of each page.
 
+/*******************************************************************************
+ * This stuff is included on every page load and globally available.
+ *******************************************************************************/
+
 session_start();
 
 // If we were called with ?function="logOut" then continue to load the page
@@ -18,12 +22,31 @@ if ($link->connect_error) {
     die ('Connect error (' . $link->connect_errno . ') '. $link->connect_error);
 }
 
+
+/*******************************************************************************
+ * Support functions not called directly but used by the functions on the page.
+ *
+ * Functions starting show_ echo their data directly into the page.
+ * Functions starting load_ retrieve data from the DB, make it HTML-safe and return it.
+ *******************************************************************************/
+
+
+// Retrieve the character ID from the 'GET' variables, or 0 if it is not found.
+function char_id()
+{
+    if ($_GET and array_key_exists('charid', $_GET)) {
+        return intval($_GET['charid']);
+    }
+    return 0;
+}
+
 // This loads the skills for the current character and returns them as an array keyed by the skill ID with the value being an array containing the values and specialties.
+// The values in the array are HTML-escaped.
 function load_skill_info()
 {
     global $link;
     $the_skills = [];
-    $char_id = get_char_id();
+    $char_id = char_id();
     if ($char_id > 0) {
         $query = <<<EOQ
         SELECT `skill`.`id` as 'skill_id',
@@ -43,19 +66,19 @@ EOQ;
             $skill_id = $row['skill_id'];
             if (! array_key_exists($skill_id, $the_skills)) {
                 $skill_data = [
-                    'id'          => $skill_id,
-                    'name'        => $row['skill_name'],
-                    'value'       => $row['skill_value'],
-                    'ticks'       => $row['skill_ticks'],
+                    'id'          => htmlspecialchars($skill_id),
+                    'name'        => htmlspecialchars($row['skill_name'] ),
+                    'value'       => htmlspecialchars($row['skill_value']),
+                    'ticks'       => htmlspecialchars($row['skill_ticks']),
                     'specialties' => []
                 ];
                 $the_skills[$skill_id] = $skill_data;
             }
             if ($row['specialty_name'] !== NULL) {
                 $the_skills[$skill_id]['specialties'][] = [
-                    'id'    => $row['specialty_id'],
-                    'name'  => $row['specialty_name'],
-                    'value' => $row['specialty_value']
+                    'id'    => htmlspecialchars($row['specialty_id']   ),
+                    'name'  => htmlspecialchars($row['specialty_name'] ),
+                    'value' => htmlspecialchars($row['specialty_value'])
                 ];
             }
         }
@@ -64,8 +87,106 @@ EOQ;
     return $the_skills;
 }
 
+// This loads the stats for the current character and returns them in an array keyed by the stat name. The values are HTML-escaped.
+function load_stats()
+{
+    global $link;
+    $output = [];
+    $char_id = char_id();
+    if ($char_id > 0) {
+        $query = <<<ESQL
+            SELECT * FROM `character`
+            WHERE id = $char_id LIMIT 1
+ESQL;
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
+        if ($result->num_rows != 1) {
+            die ("Query $query returned no rows.");
+        }
+        $row = $result->fetch_assoc();
+        $output['strength']     = intval($row['strength']    );
+        $output['constitution'] = intval($row['constitution']);
+        $output['dexterity']    = intval($row['dexterity']   );
+        $output['speed']        = intval($row['speed']       );
+        $output['charisma']     = intval($row['charisma']    );
+        $output['intelligence'] = intval($row['intelligence']);
+        $output['perception']   = intval($row['perception']  );
+        $output['luck']         = intval($row['luck']        );
+        $result->free();
+    } else {
+        $output['strength']   = "0";  $output['constitution'] = "0";
+        $output['dexterity']  = "0";  $output['speed']        = "0";
+        $output['charisma']   = "0";  $output['intelligence'] = "0";
+        $output['perception'] = "0";  $output['luck']         = "0";
+    }
+    return $output;
+}
 
-function show_characters()
+// This shows one row of stats, with each row having (name: value) x2
+function show_stat_row($name1, $value1, $name2, $value2)
+{
+    echo <<<EOQ
+    <!-- $name1 and $name2 -->
+    <div class='row use-attribute-row'>
+        <div class='col-sm-2 use-char-label'>$name1</div>
+        <div class='col-sm-1 use-char-value'>$value1</div>
+        <div class='col-sm-2 use-char-value'>&nbsp;</div>
+        <div class='col-sm-2'>&nbsp;</div>
+        <div class='col-sm-2 use-char-label'>$name2</div>
+        <div class='col-sm-1 use-char-value'>$value2</div>
+        <div class='col-sm-2 use-char-value'>&nbsp;</div>
+     </div>
+EOQ;
+}
+
+// This shows one stat edit box + the label identifying it.
+function show_stat_edit($name, $value)
+{
+    $label = htmlspecialchars("char-".strtolower($name));
+    $safe_name = htmlspecialchars($name);
+    $value_text = "value='$value'";
+    if ($value === "") {
+        $value_text = ""; 
+    }
+    echo <<<END
+        <div class="form-group col-md-2">
+            <label for="$label">$safe_name</label>
+            <input type="number" 
+                   class="form-control stat-input"
+                   id="$label"
+                   $value_text
+                   min="1">
+        </div>
+END;
+}
+
+// This shows one row of attributes, with each row having (name: value) x2
+function show_attribute_row($name1, $value1, $name2, $value2)
+{
+    echo <<<EOQ
+    <div class="row use-attribute-row">
+        <div class='col-sm-2 use-char-label'>$name1</div>    
+        <div class='col-sm-3 use-char-value'>$value1</div>
+EOQ;
+    if ($name2 !== NULL) {
+    echo <<<EOQ2
+        <div class='col-sm-2'>&nbsp;</div>
+        <div class='col-sm-2 use-char-label'>$name2</div>    
+        <div class='col-sm-3 use-char-value'>$value2</div>
+EOQ2;
+    }
+    echo "</div>";
+}
+
+
+
+/*******************************************************************************
+ * Functions used by the main page (the one that shows all the characters).
+ *******************************************************************************/
+
+
+
+// Displays all the characters owned by the currently logged-in player.
+function get_characters()
 {
     global $link;
     $query = <<<EOQ
@@ -102,40 +223,20 @@ EOH;
     $result->free();
 }
 
-function show_stat_edit($name, $value)
-{
-    $label = htmlspecialchars("char-".strtolower($name));
-    $safe_name = htmlspecialchars($name);
-    $value_text = "value='$value'";
-    if ($value === "") {
-        $value_text = ""; 
-    }
-    echo <<<END
-        <!-- Game -->
-        <div class="form-group col-md-2">
-            <label for="$label">$safe_name</label>
-            <input type="number" 
-                   class="form-control stat-input"
-                   id="$label"
-                   $value_text
-                   min="1">
-        </div>
-END;
-}
 
-// Retrieve the character ID from the 'GET' variables, or 0 if it is not found.
-function get_char_id()
-{
-    if ($_GET and array_key_exists('charid', $_GET)) {
-        return intval($_GET['charid']);
-    }
-    return 0;
-}
 
+/*******************************************************************************
+ * Functions used by the edit page.
+ *******************************************************************************/
+
+
+
+// This displays all the miscellaneous attributes for the 'edit' page.
+// E.g. name, game, age etc.
 function get_character_attributes_edit() 
 {
     global $link;
-    $char_id = get_char_id();
+    $char_id = char_id();
     if ($char_id > 0) {
         $query = <<<ESQL
             SELECT `name`, `game`, `age`, `gender` FROM `character`
@@ -155,7 +256,11 @@ ESQL;
         $name = "" ; $game   = "";
         $age  = "0"; $gender = "Other";
     }
-
+    $selected = [
+        'male'   => ($gender === "Male"   ? "selected" : ""),
+        'female' => ($gender === "Female" ? "selected" : ""),
+        'other'  => ($gender === "Other"  ? "selected" : ""),
+    ];
 
     echo <<<EOS
         <!-- Hidden input to pass the ID of the character to JavaScript -->
@@ -206,115 +311,84 @@ ESQL;
                 </label>
                 <select class="form-control col-md-3" 
                    id="char-gender"
-                   value='$gender'>
-                    <option>Male</option>
-                    <option>Female</option>
-                    <option>Other</option>
+                   required='true'>
+                    <option {$selected['male']}  >Male</option>
+                    <option {$selected['female']}>Female</option>
+                    <option {$selected['other']} >Other</option>
                 </select>
         </div>
 EOS;
 }
 
-
-
+// This displays the stats for the current character for the 'edit' page.
 function get_character_stats_edit() 
 {
-    global $link;
-    $char_id = get_char_id();
-    if ($char_id > 0) {
-        $query = <<<ESQL
-            SELECT * FROM `character`
-            WHERE id = $char_id LIMIT 1
-ESQL;
-        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
-        if ($result->num_rows != 1) {
-            die ("Query $query returned no rows.");
-        }
-        $row = $result->fetch_assoc();
-        $strength     = intval($row['strength']    );
-        $constitution = intval($row['constitution']);
-        $dexterity    = intval($row['dexterity']   );
-        $speed        = intval($row['speed']       );
-        $charisma     = intval($row['charisma']    );
-        $intelligence = intval($row['intelligence']);
-        $perception   = intval($row['perception']  );
-        $luck         = intval($row['luck']        );
-        $result->free();
-    } else {
-        $strength     = "0";  $constitution = "0";
-        $dexterity    = "0";  $speed        = "0";
-        $charisma     = "0";  $intelligence = "0";
-        $perception   = "0";  $luck         = "0";
-    }
+    $row = load_stats();
 
     echo <<<EOQ
     <div class='form-group row'>
 EOQ;
-    show_stat_edit("Strength"    , $strength);
-    show_stat_edit("Constitution", $constitution);
-    show_stat_edit("Dexterity"   , $dexterity);
-    show_stat_edit("Speed"       , $speed);
+    show_stat_edit("Strength"    , $row['strength']);
+    show_stat_edit("Constitution", $row['constitution']);
+    show_stat_edit("Dexterity"   , $row['dexterity']);
+    show_stat_edit("Speed"       , $row['speed']);
     echo <<<EOQ2
     </div>        
     <div class='form-group row'>
 EOQ2;
-    show_stat_edit("Charisma"    , $charisma);
-    show_stat_edit("Intelligence", $intelligence);
-    show_stat_edit("Perception"  , $perception);
-    show_stat_edit("Luck"        , $luck);
+    show_stat_edit("Charisma"    , $row['charisma']);
+    show_stat_edit("Intelligence", $row['intelligence']);
+    show_stat_edit("Perception"  , $row['perception']);
+    show_stat_edit("Luck"        , $row['luck']);
     echo "</div>\n";
 }
 
-
-
-
-
+// This displays the skills for the current character so the user can edit them.
 function get_character_skills_edit()
 {
     $the_skills = load_skill_info();
 
-    foreach ($the_skills as $skill_id => $skill_data) {
-        $safe_id    = htmlspecialchars($skill_data['id']   ); // The skill ID
-        $safe_value = htmlspecialchars($skill_data['value']);
-        $safe_ticks = htmlspecialchars($skill_data['ticks']);
-        $safe_name  = htmlspecialchars($skill_data['name'] );
-        $specs_json = json_encode((object)['array' => $skill_data['specialties']]);
-        $specs_string = implode(", ", array_map(function ($spec) {
-            return $spec['name']." +".$spec['value'];
-        }, $skill_data['specialties']));
-        $safe_specialties = htmlspecialchars($specs_string);
+    $concat_spec = function ($spec) {
+        return $spec['name']." +".$spec['value'];
+    };
+    
+    foreach ($the_skills as $skill_id => $skill) {
+        $specs_json = json_encode((object)['array' => $skill['specialties']]);
+        $specialties = implode(", ", array_map($concat_spec, $skill['specialties']));
         echo "\n";
         echo <<<EOH
-            <tr data-skill-id='$safe_id' data-specialties='$specs_json' id='edit-char-skill-row-$safe_id'>
+            <tr data-skill-id='{$skill['id']}' 
+                data-specialties='$specs_json' 
+                id='edit-char-skill-row-{$skill['id']}'>
             <td>
-                <label for='edit-char-skill-name-$safe_id'>Name</label>
+                <label for='edit-char-skill-name-{$skill['id']}'>Name</label>
                 <input type='text'
                        class='form-control'
-                       id='edit-char-skill-name-$safe_id'
-                       value='$safe_name'
-                       data-original-value='$safe_name'>
+                       id='edit-char-skill-name-{$skill['id']}'
+                       value='{$skill['name']}'
+                       data-original-value='{$skill['name']}'>
             </td>\n
 EOH;
         echo <<< EOH2
             <td>
-                <label for='edit-char-skill-value-$safe_id'>Value</label>
+                <label for='edit-char-skill-value-{$skill['id']}'>Value</label>
                 <input type='number' 
                        class='form-control'
-                       id='edit-char-skill-value-$safe_id'
+                       id='edit-char-skill-value-{$skill['id']}'
                        placeholder='0'
-                       value='$safe_value'
-                       data-original-value='$safe_value'>
+                       value='{$skill['value']}'
+                       data-original-value='{$skill['value']}'>
             </td>\n
 EOH2;
         echo <<< EOH3
             <td>
-                <label for='edit-char-skill-ticks-$safe_id'>Ticks</label>
+                <label for='edit-char-skill-ticks-{$skill['id']}'>Ticks</label>
                 <input type='number' 
                        class='form-control'
-                       id='edit-char-skill-ticks-$safe_id'
+                       id='edit-char-skill-ticks-{$skill['id']}'
                        placeholder='0'
-                       value='$safe_ticks'
-                       data-original-value='$safe_ticks'>
+                       value='{$skill['ticks']}'
+                       data-original-value='{$skill['ticks']}'>
             </td>\n
 EOH3;
         // Add a delete button at the end of each row.
@@ -322,8 +396,8 @@ EOH3;
             <td>
                 <button type='button' 
                         class='btn btn-secondary edit-char-delete-button'
-                        id='edit-char-delete-$safe_id'
-                        data-skill-id='$safe_id'>
+                        id='edit-char-delete-{$skill['id']}'
+                        data-skill-id='{$skill['id']}'>
                             &mdash;
                 </button>
             </td>
@@ -333,13 +407,15 @@ EOH4;
         // This is where the specialties will appear.
         echo <<<EOH5
             <tr>
-                <td colspan='4' class='edit-char-skill-specialties' id='edit-char-skill-specialties-$safe_id'>
+                <td colspan='4' 
+                    class='edit-char-skill-specialties' 
+                    id='edit-char-skill-specialties-{$skill['id']}'>
                     <button type='button' 
                             class='btn btn-secondary edit-spec-button'
-                            data-skill-id='$safe_id'>
+                            data-skill-id='{$skill['id']}'>
                         Edit
                     </button>
-                    <span class="specialty-summary">$safe_specialties</span>
+                    <span class="specialty-summary">$specialties</span>
                 </td>
             </tr>\n
 EOH5;
@@ -347,27 +423,20 @@ EOH5;
 }
 
 
-function show_attribute_row($name1, $value1, $name2, $value2)
-{
-    echo <<<EOQ
-    <div class="row use-attribute-row">
-        <div class='col-sm-2 use-char-label'>$name1</div>    
-        <div class='col-sm-3 use-char-value'>$value1</div>
-EOQ;
-    if ($name2 !== NULL) {
-    echo <<<EOQ2
-        <div class='col-sm-2'>&nbsp;</div>
-        <div class='col-sm-2 use-char-label'>$name2</div>    
-        <div class='col-sm-3 use-char-value'>$value2</div>
-EOQ2;
-    }
-    echo "</div>";
-}
 
+
+/*******************************************************************************
+ * Functions used by the use page
+ *******************************************************************************/
+
+
+
+// This displays all the miscellaneous attributes for the 'use' page.
+// E.g. name, game, age etc.
 function get_character_attributes_use() 
 {
     global $link;
-    $char_id = get_char_id();
+    $char_id = char_id();
     if ($char_id > 0) {
         $query = <<<ESQL
             SELECT `character`.`name` AS 'char_name', 
@@ -400,131 +469,50 @@ ESQL;
     show_attribute_row('Handed', '', NULL, NULL);
 }
 
-function show_stat_row($name1, $value1, $name2, $value2)
-{
-    echo <<<EOQ
-    <!-- $name1 and $name2 -->
-    <div class='row use-attribute-row'>
-        <div class='col-sm-2 use-char-label'>$name1</div>
-        <div class='col-sm-1 use-char-value'>$value1</div>
-        <div class='col-sm-2 use-char-value'>&nbsp;</div>
-        <div class='col-sm-2'>&nbsp;</div>
-        <div class='col-sm-2 use-char-label'>$name2</div>
-        <div class='col-sm-1 use-char-value'>$value2</div>
-        <div class='col-sm-2 use-char-value'>&nbsp;</div>
-     </div>
-EOQ;
-}
-
+// This displays the stats for the current character for the 'use' page.
 function get_character_stats_use() 
 {
-    global $link;
-    $char_id = get_char_id();
-    if ($char_id > 0) {
-        $query = <<<ESQL
-            SELECT * FROM `character`
-            WHERE id = $char_id LIMIT 1
-ESQL;
-        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
-        if ($result->num_rows != 1) {
-            die ("Query $query returned no rows.");
-        }
-        $row = $result->fetch_assoc();
-        $strength     = intval($row['strength']    );
-        $constitution = intval($row['constitution']);
-        $dexterity    = intval($row['dexterity']   );
-        $speed        = intval($row['speed']       );
-        $charisma     = intval($row['charisma']    );
-        $intelligence = intval($row['intelligence']);
-        $perception   = intval($row['perception']  );
-        $luck         = intval($row['luck']        );
-        $result->free();
-    } else {
-        $strength     = "0";  $constitution = "0";
-        $dexterity    = "0";  $speed        = "0";
-        $charisma     = "0";  $intelligence = "0";
-        $perception   = "0";  $luck         = "0";
-    }
-
+    $row = load_stats();
+    
     echo <<<EOQ
 EOQ;
-    show_stat_row("Strength", $strength, "Constitution", $constitution);
-    show_stat_row("Intelligence", $intelligence, "Charisma", $charisma);
-    show_stat_row("Luck", $luck, "Speed", $speed);
-    show_stat_row("Dexterity", $dexterity, "Perception", $perception);
+    show_stat_row("Strength", $row['strength'], "Constitution", $row['constitution']);
+    show_stat_row("Intelligence", $row['intelligence'], "Charisma", $row['charisma']);
+    show_stat_row("Luck", $row['luck'], "Speed", $row['speed']);
+    show_stat_row("Dexterity", $row['dexterity'], "Perception", $row['perception']);
 }
 
-
+// This displays the skills for the current character for the 'use' page.
 function get_character_skills_use()
 {
     $the_skills = load_skill_info();
 
-    foreach ($the_skills as $skill_id => $skill_data) {
-        $safe_id    = htmlspecialchars($skill_data['id']   ); // The skill ID
-        $safe_value = htmlspecialchars($skill_data['value']);
-        $safe_ticks = htmlspecialchars($skill_data['ticks']);
-        $safe_name  = htmlspecialchars($skill_data['name'] );
-        $specs_string = implode(", ", array_map(function ($spec) {
-            return $spec['name']." +".$spec['value'];
-        }, $skill_data['specialties']));
-        $safe_specialties = htmlspecialchars($specs_string);
-        if (!$safe_specialties) {
-            $safe_specialties = "&nbsp;";
+    $concat_spec = function ($spec) {
+        return $spec['name']." +".$spec['value'];
+    };
+    
+    foreach ($the_skills as $skill_id => $skill) {
+        $specialties = implode(", ", array_map($concat_spec, $skill['specialties']));
+        if (!$specialties) {
+            $specialties = "&nbsp;";
         }
 
         echo "\n";
         echo <<<EOH
             <div class='row use-attribute-row'>
-                <div class='col-md-3 use-skill-name'>$safe_name</div>
-                <div class='col-md-1 use-skill-value'>$safe_value</div>
+                <div class='col-md-3 use-skill-name'>{$skill['name']}</div>
+                <div class='col-md-1 use-skill-value'>{$skill['value']}</div>
                 <div class='col-md-1 use-skill-ticks'>
                     <center>
                         <canvas class='ticks-canvas' 
                                 width='50px' height='50px'
-                                data-ticks='$safe_ticks'></canvas>
+                                data-ticks='{$skill['ticks']}'></canvas>
                     </center>
                 </div>
-                <div class='col-md-7 use-skill-specialties'>$safe_specialties</div>
+                <div class='col-md-7 use-skill-specialties'>$specialties</div>
             </div>
 EOH;
     }
 }
-
-
-
-/*
-// Returns the current specialties as a JSON-string, so we can work with them in the JavaScript.
-function get_all_specialties($for)
-{
-    global $link;
-    $spec_data = [];
-
-    $char_id = get_char_id();
-    if ($char_id > 0) {
-        $query = <<<ESQL
-            SELECT `skill`.`id` as 'skillid', 
-            `specialty`.`id` as 'specid',
-            `specialty`.`name`, 
-            `specialty`.`value` 
-            FROM `skill` 
-            INNER JOIN `specialty` ON (`skill`.id = `specialty`.`parent`)
-            WHERE `skill`.`parent` = $char_id
-ESQL;
-        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
-        while ($row = $result->fetch_assoc()) {
-            $new_spec = array('id'    => $row['specid'], 
-                              'name'  => $row['name'], 
-                              'value' => $row['value']);
-            if (array_key_exists($row['skillid'], $spec_data)) {
-                $spec_data[$row['skillid']][] = $new_spec;
-            } else {
-                $spec_data[$row['skillid']] = array($new_spec);
-            }
-        }
-        $result->free();
-    }
-    echo json_encode((object)$spec_data);
-}
-*/
 
 ?>
