@@ -10,14 +10,14 @@
     </div>
 
     <form id="char-form">
-        <?php get_character_attributes('edit'); ?>
+        <?php get_character_attributes_edit(); ?>
 
         <div class="section-space">&nbsp;</div>
 
         <h2 class='edit-char-header'>Stats</h2>
         <hr class='edit-char-hr'>
 
-        <?php get_character_stats('edit'); ?>
+        <?php get_character_stats_edit(); ?>
 
         <div class="section-space">&nbsp;</div>
 
@@ -26,7 +26,7 @@
 
         <table id='edit-char-skills'>
             <tbody>
-                <?php get_character_skills('edit'); ?>
+                <?php get_character_skills_edit(); ?>
             </tbody>
         </table>
         <!-- The button to add new table rows. -->
