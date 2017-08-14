@@ -1,5 +1,4 @@
-/* Sticky footer styles, taken from Bootstrap v4 alpha
--------------------------------------------------- */
+/* Sticky footer styles, taken from Bootstrap v4 alpha */
 html {
   position: relative;
   min-height: 100%;
@@ -7,8 +6,8 @@ html {
 body {
   /* Margin bottom by footer height */
     margin-bottom: 60px;
-    background: /*#25254b*/ aliceblue;
-    color: /*#f8f8b8*/ darkblue;
+    background: aliceblue;
+    color:  darkblue;
 }
 .footer {
   position: absolute;
@@ -21,6 +20,8 @@ body {
 }
 
 
+/* Global styles */
+
 #toggle-login {
     margin-right: 2em;
 }
@@ -31,48 +32,129 @@ body {
     margin-right: 10px;
 }
 
+/* The first content on the page (after the header) */
 .page-top {
     margin-top: 20px;
     margin-bottom: 20px;
 }
+
+/* Some vertical whitespace to separate sections on a page */
 .section-space {
     height: 4rem;
 }
+
+/* List of errors during a save */
 .error-list {
     margin-bottom: 0;
 }
+
+
+/**********************************************************
+ * Styles for the 'edit character' page.
+ **********************************************************/
+
+
+
+/* A header for each section */
 .edit-char-header {
     margin-bottom: 0;
     padding-bottom: 0;
 }
+
+/* An hrule separating sections */
 .edit-char-hr {
     margin-top: 0;
     padding-top: 0;
     border-top: 1px solid darkblue;
     margin-bottom: 2rem;
 }
+
+/* The specialties row under each skill in the skills table */
 .edit-char-skill-specialties {
     margin-top: 0.5rem;
     padding-bottom: 0.5rem;
     font-size: 85%;
 }
+
 /* Table of skills to be edited */
 #edit-char-skills {
     width: 75%;
 }
+
 #edit-char-skills tr td {
     padding-top: 0.5rem;
 }
+
 /* Add a border to every second row (which shows the specialties). */
 #edit-char-skills tr:nth-child(even) {
     border-bottom: 1px solid lightgrey;
 }
+
 /* Expand the first input on the rows which actually have skill data on */
 #edit-char-skills tr:nth-child(odd) td:first-child {
     width: 50%;
 }
+
+/* The small button on each row on the skills table to edit the specialties */
 .edit-spec-button {
     padding: 1px 10px;
     padding-top: 2px;
     margin-right: 2em;
+}
+
+
+/**********************************************************
+ * Styles for the 'use character' page.
+ **********************************************************/
+
+/* The main vizcraft logo and the row that contains it */
+#vizcraft-logo {
+    margin-top: 40px;
+    width: 300px; 
+    height: auto;
+    vertical-align: middle;
+}
+
+/* The strapline text underneath the logo */
+#logo-text-row {
+    margin-bottom: 50px;
+    font-size: 200%;
+}
+
+/* The row containing one or more label: attribute pairs */
+.use-attribute-row {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+/* The label for each attribute on the page. e.g. "Character Name" */
+.use-char-label {
+    background: #acacdd;
+    font-weight: bold;
+    border: 1px solid darkblue;
+}
+
+/* The value for each attribute on the page, e.g. "John Smith" */
+.use-char-value {
+    border: 1px solid #acacdd;
+}
+
+.use-skill-name {
+    border: 1px solid #acacdd;
+    padding-top: 15px;
+}
+.use-skill-value {
+    border: 1px solid #acacdd;
+    padding-top: 15px;
+}
+.use-skill-ticks {
+    border: 1px solid #acacdd;
+    padding: 0px;
+}
+.use-skill-specialties {
+    border: 1px solid #acacdd;
+    padding-top: 15px;
+}
+.ticks-canvas {
+    margin-top: 15px;
 }

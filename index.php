@@ -48,6 +48,9 @@ switch ($page) {
     case 'editCharacter':
         echo "<script type='text/javascript' src='scripts/edit-character.js'></script>\n";
         break;
+    case 'useCharacter':
+        echo "<script type='text/javascript' src='scripts/use-character.js'></script>\n";
+        break;
     default:
         break;
 }
