@@ -21,7 +21,7 @@ crossorigin="anonymous" means we are not sending data back to the site.
 
     <!-- Navigation bar across the top of each page -->
 
-    <nav class="navbar navbar-toggleable-md navbar-light bg-faded">
+    <nav class="navbar navbar-toggleable-sm navbar-light bg-faded">
 
         <!-- dropdown menu button for narrow screens  -->
         <button class="navbar-toggler navbar-toggler-right"
