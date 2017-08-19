@@ -147,7 +147,6 @@ body {
     width: 100%;
     border: none;
 }
-
 .use-stat-label {
     background: #cecef5;
     font-weight: bold;
@@ -158,7 +157,6 @@ body {
     border: 1px solid #acacdd;
 }
 
-
 /* These values are for the table of skills shown in the 'use' page. */
 
 #use-skill-table {
@@ -167,43 +165,49 @@ body {
 #use-skill-table th {
     text-align: center;
 }
-tbody .use-skill-name {
+
+#use-skill-table tbody tr {
     border: 1px solid #acacdd;
+}
+#use-skill-table tbody td {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.use-skill-name {
     width: 30%;
-    padding-left: 10px;
-    padding-right: 10px;
 }
+
+.use-skill-value {
+    width: 10%;
+}
+
 tbody .use-skill-value {
-    border: 1px solid #acacdd;
     font-size: 300%;
-    width: 10%;
-    padding-left: 10px;
-    padding-right: 10px;
 }
-tbody .use-skill-ticks {
-    border: 1px solid #acacdd;
+
+.use-skill-ticks {
     width: 10%;
+}
+
+tbody .use-skill-ticks {
     padding-top: 0.5em;
 }
-tbody .use-skill-specialties {
-    border: 1px solid #acacdd;
-    width: 50%;
-    padding-left: 10px;
-    padding-right: 10px;
-}
-thead .use-skill-name {
-    width: 30%;
-}
-thead .use-skill-value {
-    width: 10%;
-}
-thead .use-skill-ticks {
-    width: 10%;
-}
-thead .use-skill-specialties {
+
+.use-skill-specialties {
     width: 50%;
 }
 
+
+
+
 .ticks-canvas {
     vertical-align: middle;
+}
+
+/* All selected items will show up as white-on-blue.
+This should be after the styles setting the label backgrounds, so it will override them. */
+[data-selected="1"] {
+    background: darkblue;
+    color: white;
 }

@@ -51,4 +51,42 @@ function updateTicks()
     });
 }
 
+// Select the stat in the element given by `target` to be alternately selected and not selected. `otherElement` is the other element in the pair (each stat is identified as Label: Value) and we need to toggle the select on both.
+function toggleStatSelect(target, otherElement)
+{
+    "use strict";
+    let tgt = $(target);
+    let selected = (tgt.attr("data-selected") === "1");
+
+    // first deselect every stat, then select the one we want to show.
+    $(".use-stat-label").add($(".use-stat-value")).attr("data-selected", "0");
+
+    // If it wasn't selected, then select it now.
+    if (!selected) {
+        tgt.attr("data-selected", "1");
+        $(otherElement).attr("data-selected", "1");
+    }
+}
+
+// All the stat rows should toggle a data value to indicate if they are selected or not.
+// This will be picked up in the CSS and used to highlight the rows.
+$(".use-stat-label").click(function (evt) {
+    "use strict";
+    toggleStatSelect(evt.target, evt.target.nextElementSibling);
+});
+
+$(".use-stat-value").click(function (evt) {
+    "use strict";
+    toggleStatSelect(evt.target, evt.target.previousElementSibling);
+});
+
+// The skill rows use tables, so we can just select the 'tr' elements.
+// Also we can select multiple rows so we just toggle the selection flag.
+$("#use-skill-table tbody tr").click(function (evt) {
+    "use strict";
+    let tgt = $(evt.currentTarget);
+    let selected = tgt.attr("data-selected") === "1";
+    tgt.attr("data-selected", selected ? "0" : "1");
+});
+
 updateTicks();
