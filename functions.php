@@ -501,7 +501,9 @@ function get_character_skills_use()
         echo <<<EOH
             <tr class='use-attribute-row'>
                 <td class='use-skill-name'>{$skill['name']}</td>
-                <td class='use-skill-value'>{$skill['value']}</td>
+                <td class='use-skill-value'>
+                    <center>{$skill['value']}</center>
+                </td>
                 <td class='use-skill-ticks'>
                     <center>
                         <canvas class='ticks-canvas' 
