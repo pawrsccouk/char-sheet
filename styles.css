@@ -129,7 +129,7 @@ body {
 
 /* The label for each attribute on the page. e.g. "Character Name" */
 .use-char-label {
-    background: #acacdd;
+    background: #8585c6;
     font-weight: bold;
     border: 1px solid darkblue;
 }
@@ -138,23 +138,72 @@ body {
 .use-char-value {
     border: 1px solid #acacdd;
 }
+.use-char-input {
+    padding: 0;
+}
+.use-char-input input {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    border: none;
+}
 
-.use-skill-name {
-    border: 1px solid #acacdd;
-    padding-top: 15px;
+.use-stat-label {
+    background: #cecef5;
+    font-weight: bold;
+    border: 1px solid darkblue;
 }
-.use-skill-value {
+
+.use-stat-value {
     border: 1px solid #acacdd;
-    padding-top: 15px;
 }
-.use-skill-ticks {
+
+
+/* These values are for the table of skills shown in the 'use' page. */
+
+#use-skill-table {
+    width: 100%;
+}
+#use-skill-table th {
+    text-align: center;
+}
+tbody .use-skill-name {
     border: 1px solid #acacdd;
-    padding: 0px;
+    width: 30%;
+    padding-left: 10px;
+    padding-right: 10px;
 }
-.use-skill-specialties {
+tbody .use-skill-value {
     border: 1px solid #acacdd;
-    padding-top: 15px;
+    font-size: 300%;
+    width: 10%;
+    padding-left: 10px;
+    padding-right: 10px;
 }
+tbody .use-skill-ticks {
+    border: 1px solid #acacdd;
+    width: 10%;
+    padding-top: 0.5em;
+}
+tbody .use-skill-specialties {
+    border: 1px solid #acacdd;
+    width: 50%;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+thead .use-skill-name {
+    width: 30%;
+}
+thead .use-skill-value {
+    width: 10%;
+}
+thead .use-skill-ticks {
+    width: 10%;
+}
+thead .use-skill-specialties {
+    width: 50%;
+}
+
 .ticks-canvas {
-    margin-top: 15px;
+    vertical-align: middle;
 }

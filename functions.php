@@ -127,13 +127,13 @@ function show_stat_row($name1, $value1, $name2, $value2)
     echo <<<EOQ
     <!-- $name1 and $name2 -->
     <div class='row use-attribute-row'>
-        <div class='col-sm-2 use-char-label'>$name1</div>
-        <div class='col-sm-1 use-char-value'>$value1</div>
-        <div class='col-sm-2 use-char-value'>&nbsp;</div>
+        <div class='col-sm-2 use-stat-label'>$name1</div>
+        <div class='col-sm-1 use-stat-value'>$value1</div>
+        <div class='col-sm-2 use-char-input'><input type="text"></div>
         <div class='col-sm-2'>&nbsp;</div>
-        <div class='col-sm-2 use-char-label'>$name2</div>
-        <div class='col-sm-1 use-char-value'>$value2</div>
-        <div class='col-sm-2 use-char-value'>&nbsp;</div>
+        <div class='col-sm-2 use-stat-label'>$name2</div>
+        <div class='col-sm-1 use-stat-value'>$value2</div>
+        <div class='col-sm-2 use-char-input'><input type="text"></div>
      </div>
 EOQ;
 }
@@ -499,18 +499,18 @@ function get_character_skills_use()
 
         echo "\n";
         echo <<<EOH
-            <div class='row use-attribute-row'>
-                <div class='col-md-3 use-skill-name'>{$skill['name']}</div>
-                <div class='col-md-1 use-skill-value'>{$skill['value']}</div>
-                <div class='col-md-1 use-skill-ticks'>
+            <tr class='use-attribute-row'>
+                <td class='use-skill-name'>{$skill['name']}</td>
+                <td class='use-skill-value'>{$skill['value']}</td>
+                <td class='use-skill-ticks'>
                     <center>
                         <canvas class='ticks-canvas' 
                                 width='50px' height='50px'
                                 data-ticks='{$skill['ticks']}'></canvas>
                     </center>
-                </div>
-                <div class='col-md-7 use-skill-specialties'>$specialties</div>
-            </div>
+                </td>
+                <td class='use-skill-specialties'>$specialties</td>
+            </tr>
 EOH;
     }
 }

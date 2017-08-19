@@ -43,19 +43,26 @@
     <div class="section-space"></div>
 
     <div class='use-skills-block'>
-               <!-- Headings -->
-        <div class='row use-attribute-row'>
-            <div class='col-sm-3 use-char-label'>Skill</div>
-            <div class='col-sm-1 use-char-label'>Level</div>
-            <div class='col-sm-1 use-char-label'>Ticks</div>
-            <div class='col-sm-7 use-char-label'>Specialties</div>
+        <div class='row'>
+            <!-- Headings -->
+            <table id='use-skill-table'>
+                <thead>
+                    <tr class='use-attribute-row'>
+                        <th class='use-char-label use-skill-name'>Skill</th>
+                        <th class='use-char-label use-skill-value'>Level</th>
+                        <th class='use-char-label use-skill-ticks'>Ticks</th>
+                        <th class='use-char-label use-skill-specialties'>Specialties</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php get_character_skills_use(); ?>
+                </tbody>
+            </table>
         </div>
-
-        <?php get_character_skills_use(); ?>
     </div>
 
     <div class="section-space"></div>
-    
+
     <div class="use-attributes-block">
         <div class="row use-attribute-row">
             <div class='col-sm-12 use-char-label'>Personal Details</div>
