@@ -10,9 +10,7 @@ crossorigin="anonymous" means we are not sending data back to the site.
 -->
 
     <link rel="stylesheet"
-          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
-          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
-          crossorigin="anonymous">
+          href="dependencies/bootstrap-4a6.css">
     <link rel="stylesheet"
           href="styles.css">
 </head>
