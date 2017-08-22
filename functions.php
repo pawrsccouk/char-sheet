@@ -183,6 +183,28 @@ EOQ2;
  * Functions used by the main page (the one that shows all the characters).
  *******************************************************************************/
 
+// This returns the Log In/Log Out buttons for the given session, as well as a label indicating who is logged in.
+function get_session_buttons()
+{
+    if ($_SESSION and
+        array_key_exists('id', $_SESSION) and
+        ($_SESSION['id'] > 0)) {
+        echo "<span class='player-name'>{$_SESSION['name']}</span>";
+        // The href here is a link to the page we were on with a parameter of 'logOut'.
+        // functions.php is the first thing run and that will do the logging out.
+        echo "<a href='?function=logOut'>Log Out</a>";
+    } else {
+        echo <<<EOH
+<button class='btn btn-outline-success my-2 my-sm-0'
+        type='button'
+        data-toggle='modal'
+        data-target='#login-modal'>
+        Login / Sign Up
+</button>
+EOH;
+    }
+}
+
 
 
 // Displays all the characters owned by the currently logged-in player.

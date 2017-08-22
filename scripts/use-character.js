@@ -54,6 +54,7 @@ function updateTicks()
 // Select the stat in the element given by `target` to be alternately selected and not selected. `otherElement` is the other element in the pair (each stat is identified as Label: Value) and we need to toggle the select on both.
 function toggleStatSelect(target, otherElement)
 {
+    // Note: we must use .attr("data-selected") instead of .data("selected") because jQuery caches the data entries elsewhere once they have been set, and we need to pick up the selected tag in the CSS.
     "use strict";
     let tgt = $(target);
     let selected = (tgt.attr("data-selected") === "1");
@@ -90,3 +91,10 @@ $("#use-skill-table tbody tr").click(function (evt) {
 });
 
 updateTicks();
+
+// Show the modal when the roll button is clicked.
+$("#make-die-roll").click(function () {
+    "use strict";
+    console.log("Die roll clicked.");
+    $("#die-roll-modal").modal();
+});
