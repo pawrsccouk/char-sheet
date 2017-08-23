@@ -1,3 +1,5 @@
+let dieRollModal = $("#die-roll-modal");
+
 function insetBy(rect, x, y)
 {
     "use strict";
@@ -92,9 +94,78 @@ $("#use-skill-table tbody tr").click(function (evt) {
 
 updateTicks();
 
+function specialtyBoxes(tr)
+{
+    "use strict";
+    let specsJSON = tr.data("specialties");
+    return specsJSON.array.map(function (spec) {
+        let cbId = `roll-skill-${specsJSON.skillId}-${spec.id}`;
+        return `<input type='checkbox' id='${cbId}'>
+<label for='${cbId}'>${spec.name} +${spec.value}</label>`;
+    }).join("<br>");
+}
+
+// Sets the initial conditions of the die roll modal based on the pre-selected stats and skills.
+function prepareDieRollModal(modal)
+{
+    "use strict";
+
+    // Add Stats
+    let stat, statVal = 0;
+    let statLabel = $(".use-stat-label[data-selected='1']");
+    let statValue = $(".use-stat-value[data-selected='1']");
+    if (statLabel.length > 0) {
+        stat = statLabel.html();
+        statVal = parseInt(statValue.val());
+    }
+    let statSelect = dieRollModal.find("#stat-select")[0];
+    if (stat) {
+        for(let i = 0, c = statSelect.options.length; i < c; i += 1) {
+            statSelect.options[i].selected = (statSelect.options[i].innerText === stat);
+        }
+    } else {
+        statSelect.options[0].selected = true;
+    }
+
+    // Add Skills
+    let tbody = modal.find("#die-roll-skills tbody");
+    tbody.empty();
+    let includedSkills = new Set();
+    $("#use-skill-table tbody tr[data-selected='1']").each(function (i, tr) {
+        // jshint unused:true
+        let skillName = $(tr).find(".use-skill-name").html();
+        let skillValue = $(tr).find(".use-skill-value center").html();
+        let skill = `<tr><td>${skillName} +${skillValue}</td>
+                         <td>${specialtyBoxes($(tr))}</td></tr>`;
+        if (tbody[0].lastElementChild) {
+            $(tbody[0].lastElementChild).before(skill);
+        } else {
+            tbody[0].innerHTML = skill;
+        }
+        includedSkills.add(skillName);
+    });
+
+    // Prepare the list of the remaining skills to add.
+    // jshint unused:true
+    $("#roll-add-skill option:not(:first-child)").remove();
+    let otherSkills = $("#use-skill-table tbody tr")
+        .filter((i, tr) => !includedSkills.has(tr.cells[0].innerText))
+        .map((i, tr) => "<option>" + tr.cells[0].innerText + "</option>");
+    $("#roll-add-skill option:first-child").after($.makeArray(otherSkills));
+}
+
+// Clear all selections when the 'Reset' button is clicked.
+$("#reset-selections").click(function () {
+    "use strict";
+    let toProcess = $("#use-skill-table tbody tr[data-selected='1']")
+    .add($(".use-stat-label[data-selected='1']"))
+    .add($(".use-stat-value[data-selected='1']"));
+    toProcess.attr("data-selected", "0");
+});
+
 // Show the modal when the roll button is clicked.
 $("#make-die-roll").click(function () {
     "use strict";
-    console.log("Die roll clicked.");
-    $("#die-roll-modal").modal();
+    prepareDieRollModal(dieRollModal);
+    dieRollModal.modal();
 });

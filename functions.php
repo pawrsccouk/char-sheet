@@ -514,6 +514,9 @@ function get_character_skills_use()
     };
     
     foreach ($the_skills as $skill_id => $skill) {
+        $specs_json = json_encode((object)['skillId' => $skill['id'],
+                                           'array'   => $skill['specialties']]);
+
         $specialties = implode(", ", array_map($concat_spec, $skill['specialties']));
         if (!$specialties) {
             $specialties = "&nbsp;";
@@ -521,7 +524,7 @@ function get_character_skills_use()
 
         echo "\n";
         echo <<<EOH
-            <tr class='use-attribute-row'>
+            <tr class='use-attribute-row' data-specialties='{$specs_json}'>
                 <td class='use-skill-name'>{$skill['name']}</td>
                 <td class='use-skill-value'>
                     <center>{$skill['value']}</center>

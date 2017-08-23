@@ -24,7 +24,9 @@ This bar has only the 'Login' button -->
                 <a class="nav-link" href="index.php">Characters</a>
             </li>
             <li class="nav-item btn btn-primary" id="make-die-roll">Roll</li>
+            <li class="nav-item btn btn-secondary" id="reset-selections">Reset</li>
         </ul>
+
 
         <!-- Login info &amp; button -->
         <div class="form-inline my-2 my-lg-0">

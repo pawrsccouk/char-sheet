@@ -211,3 +211,27 @@ This should be after the styles setting the label backgrounds, so it will overri
     background: darkblue;
     color: white;
 }
+
+
+/* These styles represent the modal dialog used to handle making a roll. */
+
+#die-roll-stats-misc {
+    width: 100%;
+    border-collapse: separate;
+}
+#die-roll-skills {
+    width: 100%;
+}
+
+#die-roll-skills tbody tr:not(:last-child) {
+    border-bottom: 1px solid #bdccda;
+}
+
+.roll-label {
+    font-weight: bold;
+    padding-right: 10px;
+}
+.roll-header {
+    font-weight: bold;
+    padding-top: 30px;
+}

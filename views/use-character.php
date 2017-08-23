@@ -79,22 +79,68 @@
      tabindex="-1"
      role="dialog"
      aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Modal title</h5>
+                <h5 class="modal-title">Dice Roll</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                This is the modal body.
+                <table id="die-roll-stats-misc">
+                    <tbody>
+                        <tr>
+                            <td class="roll-label">Stat:</td>
+                            <td>
+                                <select id="stat-select">
+                                    <option>None</option>
+                                    <optgroup label="Physical">
+                                        <option>Strength</option>
+                                        <option>Dexterity</option>
+                                        <option>Constitution</option>
+                                        <option>Speed</option>
+                                    </optgroup>
+                                    <optgroup label="Mental">
+                                        <option>Charisma</option>
+                                        <option>Intelligence</option>
+                                        <option>Luck</option>
+                                        <option>Perception</option>
+                                    </optgroup>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="roll-label">Static Adds:</td>
+                            <td><input id="static-adds" type="number" value="0"></td>
+                        </tr>
+                        <tr>
+                            <td class="roll-label">Extra D4s:</td>
+                            <td><input id="extra-d4s" type="number" value="1" min="0"</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table id="die-roll-skills">
+                    <thead>
+                        <tr>
+                            <th class="roll-header">Skills</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+                <select id="roll-add-skill">
+                    <option>Add Skill&hellip;</option>
+                </select>
+
             </div>
             <div class="modal-footer">
                 <button type="button" 
-                class="btn btn-secondary" 
-                data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
+                        class="btn btn-secondary"
+                        data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Roll</button>
             </div>
         </div>
     </div>
