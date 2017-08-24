@@ -124,6 +124,7 @@
                 <table id="die-roll-skills">
                     <thead>
                         <tr>
+                           <th>&nbsp;</th>
                             <th class="roll-header">Skills</th>
                             <th>&nbsp;</th>
                         </tr>
@@ -132,7 +133,7 @@
                     </tbody>
                 </table>
                 <select id="roll-add-skill">
-                    <option>Add Skill&hellip;</option>
+                    <option data-dummy='true'>Add Skill&hellip;</option>
                 </select>
 
             </div>
