@@ -8,6 +8,9 @@ echo "<!DOCTYPE html>\n<html>\n";
 // Stylesheets and page header information
 include("views/header.php");
 
+// If $tests is true, include unit tests.  The output will appear in the browser console.
+$tests = ($_GET and array_key_exists('test', $_GET));
+
 $page = "";
 if ($_GET and array_key_exists('page', $_GET)) {
     $page = $_GET['page'];
@@ -56,10 +59,14 @@ switch ($page) {
         echo "<script type='text/javascript' src='scripts/edit-character.js'></script>\n";
         break;
     case 'useCharacter':
+        echo "<script type='text/javascript' src='scripts/die-roll.js'></script>\n";
         echo "<script type='text/javascript' src='scripts/use-character.js'></script>\n";
         break;
     default:
         break;
+}
+if ($tests) {
+    echo "<script type='text/javascript' src='scripts/die-roll-tests.js'></script>\n";
 }
 
 // HTML end.
