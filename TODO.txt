@@ -1,0 +1,14 @@
+Stuff to do
+===========
+
+* Add a cookie to preserve the login data.
+* Add 'Notes'
+* Add 'Export to JSON/XML'
+* Add logging of last N rolls & viewing the log.
+* Add Public/Private flag
+* Add tooltips around scratch pads and/or save scratchpad data.
+
+
+Security
+========
+Check that passing values in the URL doesn't let you see characters you don't own.
