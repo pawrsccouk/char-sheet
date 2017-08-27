@@ -60,13 +60,13 @@ switch ($page) {
         break;
     case 'useCharacter':
         echo "<script type='text/javascript' src='scripts/die-roll.js'></script>\n";
+        if ($tests) {
+            echo "<script type='text/javascript' src='scripts/die-roll-tests.js'></script>\n";
+        }
         echo "<script type='text/javascript' src='scripts/use-character.js'></script>\n";
         break;
     default:
         break;
-}
-if ($tests) {
-    echo "<script type='text/javascript' src='scripts/die-roll-tests.js'></script>\n";
 }
 
 // HTML end.
