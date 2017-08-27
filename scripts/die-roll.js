@@ -71,6 +71,8 @@ class DieRoll {
         return this._stat;
     }
     set stat({ name, value }) {
+        console.assert(name, "Stat: name must have a value");
+        console.assert(Number.isInteger(value), "Value " + value + " is not an integer.");
         this._stat = { name, value };
         this.resetState();
     }
@@ -80,11 +82,35 @@ class DieRoll {
         return this._skills;
     }
 
-    set skills(s) {
-        this._skills = s;
+    /// Add a skill to the list.
+    addSkill(name, value)
+    {
+        console.assert(name !== "", "All skills must have a name.");
+        console.assert(Number.isInteger(value), "Skill value " + value + "is not an integer.");
+        this._skills.push( { name, value } );
         this.resetState();
-        console.assert(this._skills.filter(s => s.name === undefined).length === 0,
-                       "All skills must have a name.");
+    }
+
+    /// A collection of specialties to be included when making the die roll.
+    ///
+    /// This is a dictionary whose key is the name of the skill and whose value is the specialty selected. If there is no value for a given key, it means that skill had no specialty or the specialty wasn't relevant.
+    get specialties() {
+        return this._specialties;
+    }
+
+    addSpecialty(skillName, specialtyName, specialtyValue)
+    {
+        console.assert(this.skills.filter((s) => s.name === skillName).length > 0, "addSpecialty: The skill " + skillName + " has not been added yet.");
+        console.assert(skillName, "addSpecialty: skillName is not a valid string");
+        console.assert(specialtyName, "addSpecialty: specialtyName is not a valid string");
+        console.assert(Number.isInteger(specialtyValue), "addSpecialty: specialtyValue " + specialtyValue + " is not an integer");
+        let specObj = { name: specialtyName, value: specialtyValue };
+        if (!this._specialties[skillName]) {
+            this._specialties[skillName] = [specObj];
+        } else {
+            this._specialties[skillName].push(specObj);
+        }
+        this.resetState();
     }
 
     /// A total value to be added to the final die roll.
@@ -92,30 +118,8 @@ class DieRoll {
         return this._adds;
     }
     set adds(a) {
+        console.assert(Number.isInteger(a), "Adds value " + a + " is not an integer.");
         this._adds = a;
-        this.resetState();
-    }
-
-    /// A collection of specialties to be included when making the die roll.
-    ///
-    /// This is a dictionary whose key is the name of the skill and whose value is the specialty selected. If there is no value for a given key, it means that skill had no specialty or the specialty wasn't relevant.
-    // TODO: Since we can't specify the type of s, then we should move the methods into the class, e.g. addSpecialtyForSkill(spec, skill);
-    get specialties() {
-        return this._specialties;
-    }
-//    set specialties(s) {
-//        this._specialties = s;
-//        this.resetState();
-//    }
-
-    addSpecialty(skillName, specialtyName, specialtyValue)
-    {
-        let specObj = { name: specialtyName, value: specialtyValue };
-        if (!this._specialties[skillName]) {
-            this._specialties[skillName] = [specObj];
-        } else {
-            this._specialties[skillName].push(specObj);
-        }
         this.resetState();
     }
 
@@ -126,6 +130,7 @@ class DieRoll {
         return this._extraD4s;
     }
     set extraD4s(e) {
+        console.assert(Number.isInteger(e), "ExtraD4s value " + e + " is not an integer.");
         this._extraD4s = e;
         this.resetState();
     }
@@ -243,11 +248,11 @@ class DieRoll {
     /// This doesn't trigger a die roll, just provides a detailed description of the last roll made.
     _showResultAsHTML(total, d6Rolls, dieRollsPerSkill, extraD4Rolls) 
     {
-        let log = `<b>D6 Roll:</b>\n<br/>\n`;
+        let log = `<div class='result'><b>D6 Roll:</b>\n<br/>\n`;
 
         // For the D6 rolls, first check for a botch and return immediately if so.
         if (DieRoll.isBotch(d6Rolls)) {
-            log += `<div>${d6Rolls[0]} + ${d6Rolls[1]} (<b class='botch'>Botch!</b>)</div>`;
+            log += `<div>${d6Rolls[0]} + ${d6Rolls[1]} (<b class='botch'>Botch!</b>)</div></div>`;
             return log;
         }
 
@@ -308,7 +313,7 @@ class DieRoll {
         if (this.adds !== 0) {
             log += `<b>Adds:</b><br/>\n<div>${this.adds}</div><br/>\n`;
         }
-        log += `<br/><hr/>\n<b>Total = ${total}</b>`;
+        log += `<br/><hr/>\n<b>Total = ${total}</b></div>`;
         return log;
     }
 

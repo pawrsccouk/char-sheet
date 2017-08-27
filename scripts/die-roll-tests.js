@@ -102,21 +102,22 @@ console.log(d.resultAsHTML);
 console.log("Result for 2D6 + stat (speed:11) and skill (Archery:4) no specialty default adds.");
 d = new DieRoll();
 d.stat = { name: "Speed", value: 11 };
-d.skills = [ {name: "Archery", value: 4 }  ];
+d.addSkill("Archery", 4);
 d.roll();
 console.log(d.resultAsHTML);
 
 console.log("Result for 2D6 + stat (per: 8) + skills (Plumbing: 3), (Chic: 2) no specialties default adds.");
 d = new DieRoll();
 d.stat = { name: "Perception", value: 8 };
-d.skills = [ { name: "Plumbing", value: 3 }, { name: "Chic", value: 2 }  ];
+d.addSkill("Plumbing", 3);
+d.addSkill("Chic", 2);
 d.roll();
 console.log(d.resultAsHTML);
 
-console.log("Result for 2D6 + stat (Con:11), skill (Firearms:4), specialty (Snap Shot: 3) default adds.");
+console.log("Result for 2D6 + stat (Con:11), skill (Firearms:4), specialties (Snap Shot:3) (Long Range:1) default adds.");
 d = new DieRoll();
 d.stat = { name: "Constitution", value: 11 };
-d.skills = [ {name: "Firearms", value: 4 }  ];
+d.addSkill("Firearms", 4);
 d.addSpecialty("Firearms", "Snap Shot", 3);
 d.addSpecialty("Firearms", "Long range", 1);
 d.roll();

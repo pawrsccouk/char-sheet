@@ -66,19 +66,19 @@ EOQ;
             $skill_id = $row['skill_id'];
             if (! array_key_exists($skill_id, $the_skills)) {
                 $skill_data = [
-                    'id'          => htmlspecialchars($skill_id),
+                    'id'          => intval($skill_id),
                     'name'        => htmlspecialchars($row['skill_name'] ),
-                    'value'       => htmlspecialchars($row['skill_value']),
-                    'ticks'       => htmlspecialchars($row['skill_ticks']),
+                    'value'       => intval($row['skill_value']),
+                    'ticks'       => intval($row['skill_ticks']),
                     'specialties' => []
                 ];
                 $the_skills[$skill_id] = $skill_data;
             }
             if ($row['specialty_name'] !== NULL) {
                 $the_skills[$skill_id]['specialties'][] = [
-                    'id'    => htmlspecialchars($row['specialty_id']   ),
+                    'id'    => intval($row['specialty_id']),
                     'name'  => htmlspecialchars($row['specialty_name'] ),
-                    'value' => htmlspecialchars($row['specialty_value'])
+                    'value' => intval($row['specialty_value'])
                 ];
             }
         }
@@ -126,7 +126,7 @@ function show_stat_row($name1, $value1, $name2, $value2)
 {
     echo <<<EOQ
     <!-- $name1 and $name2 -->
-    <div class='row use-attribute-row'>
+    <div class='row use-stat-row'>
         <div class='col-sm-2 use-stat-label'>$name1</div>
         <div class='col-sm-1 use-stat-value'>$value1</div>
         <div class='col-sm-2 use-char-input'><input type="text"></div>

@@ -1,8 +1,0 @@
-This twitter clone is used to demonstrate MVC layout in web design.
-
-Model = the database
-View(s) = the HTML pages. These are stored in the views subdirectory.
-Controller(s) = the functions that operate on them.
-	        These are stored in functions.php for now.
-
-

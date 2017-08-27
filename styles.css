@@ -147,6 +147,13 @@ body {
     width: 100%;
     border: none;
 }
+
+/* The row containing one or more label: attribute pairs for stats */
+.use-stat-row {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
 .use-stat-label {
     background: #cecef5;
     font-weight: bold;
@@ -234,4 +241,17 @@ This should be after the styles setting the label backgrounds, so it will overri
 .roll-header {
     font-weight: bold;
     padding-top: 30px;
+}
+
+/* These styles represent the die roll results */
+.result div {
+     margin-left: 25px;
+}
+
+.result span {
+    margin-left: 25px;
+}
+
+.result .botch {
+    color: red;
 }
