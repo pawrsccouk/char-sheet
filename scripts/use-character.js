@@ -308,10 +308,10 @@ function rollDiceModalHandler()
     let charJSON = getCharacterInfo();
 
     // Find the selected stat.
-    if (modalJSON.selectedStat) {
+    if (modalJSON.stat) {
         roll.stat = { 
-            name: modalJSON.selectedStat, 
-            value: charJSON.stats[modalJSON.selectedStat] 
+            name: modalJSON.stat, 
+            value: charJSON.stats[modalJSON.stat] 
         };
     }
 
