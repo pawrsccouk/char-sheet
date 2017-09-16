@@ -61,10 +61,6 @@ function getCharacterInfo()
 function getDieRollModalInfo()
 {
     "use strict";
-    // The Stat
-    let statOption = dieRollModal.find("#stat-select")[0].selectedOptions[0];
-    let statName = statOption.innerHTML;
-
     // The skills.
     let allSkills = [];
     let tbody = dieRollModal.find("#die-roll-skills tbody");
@@ -78,9 +74,18 @@ function getDieRollModalInfo()
         allSkills.push(theSkill);
     });
 
+    // Adds & D4s
     let adds = parseInt(dieRollModal.find("#die-roll-stats-misc #static-adds").val());
     let d4s = parseInt(dieRollModal.find("#die-roll-stats-misc #extra-d4s").val());
-    return { stat: statName, skills: allSkills, adds, extraD4s: d4s };
+    let json = { skills: allSkills, adds, extraD4s: d4s };
+
+    // Add the Stat (if present)
+    let statOption = dieRollModal.find("#stat-select")[0].selectedOptions[0];
+    let statName = statOption.innerHTML;
+    if (statName !== "None") {
+        json.stat = statName;
+    }
+    return json;
 }
 
 function insetBy(rect, x, y) {
