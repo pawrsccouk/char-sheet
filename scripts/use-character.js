@@ -33,7 +33,7 @@ function getCharacterInfo()
     skillsTable.find("tr").each((i, tr) => { // jshint unused:true
         let specialties = $(tr).data("specialties");
         let name = tr.children[0].innerText;
-        let selected = tr.dataset.selected ? true : false;
+        let selected = tr.dataset.selected == "1" ? true : false;
         let value = parseInt(tr.children[1].innerText);
         skills.push({ name, value, specialties, selected });
     });
