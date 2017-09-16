@@ -15,8 +15,13 @@ if ($_GET and
     session_unset();
 }
 
+// These values are switched by the fixdb.py script to point to local dev or remote production databases.
+$DB_host = NULL;
+$DB_user = 'paw';
+$DB_password = '15t2chr2';
+$DB_database = 'charsheet';
 
-$link = new mysqli(/*"127.0.0.1"*/ NULL, "paw", "15t2chr2", "charsheet", 3306);
+$link = new mysqli($DB_host, $DB_user, $DB_password, $DB_database);
 if ($link->connect_error) {
     // Note that connect_error can disclose public info, so don't display in production.
     die ('Connect error (' . $link->connect_errno . ') '. $link->connect_error);
