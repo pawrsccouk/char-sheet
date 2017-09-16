@@ -179,9 +179,10 @@ $(".use-stat-value").click(function (evt) {
 // Also we can select multiple rows so we just toggle the selection flag.
 $("#use-skill-table tbody tr").click(function (evt) {
     "use strict";
+    let toggle = b => b ? "0" : "1";
     let tgt = $(evt.currentTarget);
     let selected = tgt.attr("data-selected") === "1";
-    tgt.attr("data-selected", selected ? "0" : "1");
+    tgt.attr("data-selected", toggle(selected));
 });
 
 updateTicks();

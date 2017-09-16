@@ -48,6 +48,11 @@ body {
     margin-bottom: 0;
 }
 
+/* Checkboxes the same size as the text they represent */
+[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+}
 
 /**********************************************************
  * Styles for the 'edit character' page.
