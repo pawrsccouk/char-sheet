@@ -35,6 +35,11 @@ if ($link->connect_error) {
  * Functions starting load_ retrieve data from the DB, make it HTML-safe and return it.
  *******************************************************************************/
 
+// Encode $raw_string to be HTML-safe, replace <>'" with entities.
+function htmlenc($raw_string)
+{
+    return htmlentities($raw_string, ENT_QUOTES|ENT_HTML5);
+}
 
 // Retrieve the character ID from the 'GET' variables, or 0 if it is not found.
 function char_id()
@@ -72,7 +77,7 @@ EOQ;
             if (! array_key_exists($skill_id, $the_skills)) {
                 $skill_data = [
                     'id'          => intval($skill_id),
-                    'name'        => htmlspecialchars($row['skill_name'] ),
+                    'name'        => htmlenc($row['skill_name'] ),
                     'value'       => intval($row['skill_value']),
                     'ticks'       => intval($row['skill_ticks']),
                     'specialties' => []
@@ -82,7 +87,7 @@ EOQ;
             if ($row['specialty_name'] !== NULL) {
                 $the_skills[$skill_id]['specialties'][] = [
                     'id'    => intval($row['specialty_id']),
-                    'name'  => htmlspecialchars($row['specialty_name'] ),
+                    'name'  => htmlenc($row['specialty_name'] ),
                     'value' => intval($row['specialty_value'])
                 ];
             }
@@ -146,8 +151,8 @@ EOQ;
 // This shows one stat edit box + the label identifying it.
 function show_stat_edit($name, $value)
 {
-    $label = htmlspecialchars("char-".strtolower($name));
-    $safe_name = htmlspecialchars($name);
+    $label = htmlenc("char-".strtolower($name));
+    $safe_name = htmlenc($name);
     $value_text = "value='$value'";
     if ($value === "") {
         $value_text = ""; 
@@ -226,9 +231,9 @@ EOQ;
         echo "You have no characters to display.";
     } else {
         while ($row = $result->fetch_assoc()) {
-            $character_text = htmlspecialchars($row['name']." - ".$row['game']);
-            $name = htmlspecialchars($row['name']);
-            $id = htmlspecialchars($row['id']);
+            $character_text = htmlenc($row['name']." - ".$row['game']);
+            $name = htmlenc($row['name']);
+            $id = htmlenc($row['id']);
             echo <<<EOH
             <p class='character-box'>
                     <span class='character-name'>
@@ -274,10 +279,10 @@ ESQL;
             die ("Query $query returned no rows.");
         }
         $row = $result->fetch_assoc();
-        $name = htmlspecialchars($row['name']);
-        $game = htmlspecialchars($row['game']);
-        $age = htmlspecialchars($row['age']);
-        $gender = htmlspecialchars($row['gender']);
+        $name = htmlenc($row['name']);
+        $game = htmlenc($row['game']);
+        $age = htmlenc($row['age']);
+        $gender = htmlenc($row['gender']);
         $result->free();
     } else {
         $name = "" ; $game   = "";
@@ -479,11 +484,11 @@ ESQL;
             die ("Query $query returned no rows.");
         }
         $row = $result->fetch_assoc();
-        $name = htmlspecialchars($row['char_name']);
-        $game = htmlspecialchars($row['game']);
-        $age = htmlspecialchars($row['age']);
-        $gender = htmlspecialchars($row['gender']);
-        $player = htmlspecialchars($row['player_name']);
+        $name = htmlenc($row['char_name']);
+        $game = htmlenc($row['game']);
+        $age = htmlenc($row['age']);
+        $gender = htmlenc($row['gender']);
+        $player = htmlenc($row['player_name']);
         $result->free();
     } else {
         $name = "" ; $game   = ""; $player = "";

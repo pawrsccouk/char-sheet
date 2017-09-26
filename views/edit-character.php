@@ -4,7 +4,8 @@
         if ($_GET['charid'] == 0) {
             echo "<h1 class='page-top'>New character</h1>";
         } else {
-            echo "<h1 class='page-top'>Edit {$_GET['name']}</h1>";
+            $safe_name = urldecode($_GET['name']);
+            echo "<h1 class='page-top'>Edit $safe_name</h1>";
         }
         ?>
     </div>
