@@ -7,22 +7,34 @@ $error_log = array();
 
 include("admin.php");
 
-function update_skill($skill_info)
+function update_skill_values($id, $name, $value, $ticks)
 {
     global $link, $error_log;
     $query = <<<EOQ
     UPDATE `skill` SET
-    `name`   = '{$link->escape_string($skill_info->name)  }',
-    `value`  = {$link->escape_string($skill_info->value)  },
-    `ticks`  = {$link->escape_string($skill_info->ticks)  }
-    WHERE id = {$link->escape_string($skill_info->skillid)}
+      `name`   = '{$link->escape_string($name)  }',
+      `value`  = $value,
+      `ticks`  = $ticks
+    WHERE id = $id
     LIMIT 1
 EOQ;
     if (!$link->query($query)) {
         $error_log[]  = "Query ".$query." failed.". $link->error;
         return FALSE; // Failed.
     }
-    
+    return TRUE;
+}
+
+function update_skill($skill_info)
+{
+    global $link, $error_log;
+    if (!update_skill_values(intval($skill_info->skillid),
+                             $link->escape_string($skill_info->name),
+                             intval($skill_info->value),
+                             intval($skill_info->ticks))) {
+        return FALSE; // Failed
+    }
+
     // Now insert or update the specialties.
     foreach ($skill_info->specialties as $spec) {
         if (array_key_exists('id', $spec)) {
@@ -91,7 +103,7 @@ EOQ2;
 function delete_skill($skill_id)
 {
     global $link, $error_log;
-    
+
     // Delete all the specialties associated with the skill
     $query_spec = <<<EOQ
         DELETE FROM `specialty`
@@ -101,7 +113,7 @@ EOQ;
         $error_log[] = "Query ".$query_spec." failed.".$link->error;
         return FALSE;
     }
-    
+
     // and then delete the skill itself.
     $query_skill = <<<EOQ2
         DELETE FROM `skill` 
@@ -176,7 +188,6 @@ EOQ;
     return $char_id; // Success.
 }
 
-
 function update_character($char_data) 
 {
     global $link, $error_log;
@@ -203,7 +214,7 @@ EOQ;
     }
 
     // The skillsToUpdate/Insert/Delete are maps with skill ID as the key and name/value/ticks/specialties as the attributes.
-    
+
     // Now update any skills that need it.
     foreach ($char_data->skillsToUpdate as $skill) {
         if (!update_skill($skill)) {
@@ -227,6 +238,32 @@ EOQ;
         }
     }
     return TRUE; // Success!
+}
+
+
+// This wraps the function $change_fn in a begin/commit/rollback block.
+// If $change_fn() returns NULL, the change will be rolled back, otherwise it'll be committed.
+function in_transaction($change_fn)
+{
+    global $link, $error_log;
+    $link->autocommit(FALSE);
+    if (!$link->begin_transaction()) {
+        $error_log[] = "Transaction error:".$link->error;
+        return NULL;
+    }
+    $result = $change_fn();
+    if ($result === NULL) {
+        $error_log[] = "All changes rolled back.";
+        if (!$link->rollback()) {
+            $error_log[] = "Rollback failed: ".$link->error;
+        }
+    } else {
+        if (!$link->commit()) {
+            $error_log[] = "Commit failed: ".$link->error;
+        }
+    }
+    $link->autocommit(TRUE);
+    return $result;
 }
 
 function handle_actions()
@@ -258,34 +295,24 @@ function handle_actions()
         case "updateCharacter":
             // Character data is passed as a JSON object.
             $char_data = json_decode($_POST['charData']);
-
-            $link->autocommit(FALSE);
-            if (!$link->begin_transaction()) {
-                $error_log[] = "Transaction error:".$link->error;
-                return NULL;
-            }
-
-            // If the insert/update was successful, return an array which may include the character ID (for new inserts). If it failed, return NULL.
-            if ($char_data->charid == 0) {
-                $char_id = insert_character($char_data);
-                $result = ($char_id === NULL) ? NULL: array('charid' => $char_id);
-            } else {
-                $success = update_character($char_data);
-                $result = $success ? array() : NULL;
-            }
-            if ($result === NULL) {
-                $error_log[] = "All changes rolled back.";
-                if (!$link->rollback()) {
-                    $error_log[] = "Rollback failed: ".$link->error;
+            return in_transaction(function () use ($char_data) {
+                // If the insert/update was successful, return an array which may include the character ID (for new inserts). If it failed, return NULL.
+                if ($char_data->charid == 0) {
+                    $char_id = insert_character($char_data);
+                    $result = ($char_id === NULL) ? NULL: array('charid' => $char_id);
+                } else {
+                    $success = update_character($char_data);
+                    $result = $success ? array() : NULL;
                 }
-            } else {
-                if (!$link->commit()) {
-                    $error_log[] = "Commit failed: ".$link->error;
-                }
-            }
+                return $result;
+            });
 
-            $link->autocommit(TRUE);
-            return $result;
+        case "updateSkill":
+            return update_skill_values(intval($_POST['skillId']), 
+                                $link->escape_string($_POST['name']),
+                                intval($_POST['value']), 
+                                intval($_POST['ticks'])) 
+                ? array() : NULL;
 
         default:
             $error_log[] = "Unknown action: " . $_POST['action'];

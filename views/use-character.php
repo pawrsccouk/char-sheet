@@ -168,6 +168,9 @@
                                 <select id="roll-add-skill">
                                     <option data-dummy='true'>Add Skill&hellip;</option>
                                 </select>
+                                <hr/>
+                                <input type="checkbox" id="roll-add-tick">
+                                <label for="roll-add-tick">Add a tick?</label>
                             </div>
                         </div>
                     </div>
@@ -199,6 +202,8 @@
 
             <!-- The footer contains our action buttons -->
             <div class="modal-footer">
+              <!-- Error results will appear here if necessary. -->
+               <div id="roll-error-div"></div>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 <button type="button" 
                         class="btn btn-primary"

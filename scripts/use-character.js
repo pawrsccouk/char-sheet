@@ -32,10 +32,13 @@ function getCharacterInfo()
     let skills = [];
     skillsTable.find("tr").each((i, tr) => { // jshint unused:true
         let specialties = $(tr).data("specialties");
+        let id = specialties.skillId;
         let name = tr.children[0].innerText;
         let selected = tr.dataset.selected == "1" ? true : false;
         let value = parseInt(tr.children[1].innerText);
-        skills.push({ name, value, specialties, selected });
+        // td -> center -> canvas
+        let ticks = $(tr.children[2].firstElementChild.firstElementChild).data("ticks");
+        skills.push({ id, name, value, ticks, specialties, selected });
     });
 
     return {
@@ -97,6 +100,20 @@ function insetBy(rect, x, y) {
     return rect;
 }
 
+// Takes a text string and returns a JSON object with parsed text.
+// On failure, displays the string in an alert (it is usually PHP error code intermingled with the response data if there is a compilation error in the PHP code) and returns undefined.
+function parseResult(resultText)
+{
+    try {
+        return JSON.parse(resultText);
+    } catch (e) {
+        // Probably php mixing error data in with the JSON result.
+        // View the text which contains the php warnings.
+        alert(resultText);
+    }
+    return undefined;
+}
+
 // This draws the ticks into the canvas object represented by `gc`.
 // `gc`     is the GC of the canvas to draw into.
 // `bounds` is a rect object with {x, y, width, height}.
@@ -104,7 +121,8 @@ function insetBy(rect, x, y) {
 function drawTicks(gc, bounds, ticks) 
 {
     "use strict";
-
+    gc.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
+    
     // 4 rows of 5 boxes.
     // 1 find which is smaller, width / 5, or height / 4
     let boxSize = Math.min(bounds.width / 5, bounds.height / 4);
@@ -140,13 +158,15 @@ function updateTicks()
 {
     "use strict";
     $(".ticks-canvas").each(function (index, value) { // jshint unused:true
-        drawTicks(value.getContext("2d"), {
-            x: 0,
-            y: 0,
-            width: 50,
-            height: 50
-        },
-                  $(value).data("ticks"));
+        drawTicks(
+            value.getContext("2d"), 
+            {
+                x: 0,
+                y: 0,
+                width: 50,
+                height: 50
+            }, 
+            $(value).data("ticks"));
     });
 }
 
@@ -198,10 +218,19 @@ function removeSkillHandler(evt)
     // Remove the skill row from the skills dialog
     let skillRow = evt.target.parentElement.parentElement;
     skillRow.remove();
+
     // and add it back to the 'Add Skill' selector's options.
     let skillName = $(evt.target).data("skill");
     let options = $($("#roll-add-skill")[0].options);
     options.last().after("<option>" + skillName + "</option>");
+
+    // and disable the tick checkbox unless there is exactly one skill.
+    let tbody = dieRollModal.find("#die-roll-skills tbody");
+    let cb = dieRollModal.find("#roll-add-tick")[0];
+    cb.disabled = (tbody.find("tr").length !== 1);
+    if (cb.disabled) {
+        cb.checked = false;
+    }
 }
 
 function rowForSkill(skillJSON)
@@ -233,7 +262,10 @@ function prepareDieRollModal(modal)
 
     dieRollModal.find("#collapse-choose").collapse('show');
     dieRollModal.find("#collapse-results").collapse('hide');
-    
+
+    // Remove any errors from previous sessions.
+    dieRollModal.find("#roll-error-div").empty().hide();
+
     let charJSON = getCharacterInfo();
 
     // Add Stats
@@ -267,6 +299,13 @@ function prepareDieRollModal(modal)
     // Bind all the 'remove skill' buttons to the handler.
     tbody.find("button").click(removeSkillHandler);
 
+
+    // If we have exactly one skill selected, default the ticks checkbox to checked and enable it.
+    let initTick = selectedSkills.length == 1;
+    let cb = dieRollModal.find("#roll-add-tick")[0];
+    cb.checked = initTick;
+    cb.disabled = !initTick;
+
     // Prepare the select with the remaining skills to add.
     $("#roll-add-skill option:not(:first-child)").remove();
 
@@ -299,11 +338,80 @@ function addSkillChangeHandler(evt)
 
         // Now remove the row from the select's options.
         $(selectedOption).remove();
+
+        // If we now have exactly one skill, then enable the 'Ticks' button.
+        let cb = dieRollModal.find("#roll-add-tick")[0];
+        cb.disabled = tbody.find("tr").length !== 1;
+        if (cb.disabled) {
+            cb.checked = false;
+        }
     }
 }
 
 // If the 'Add skill' combo in the die roll modal is changed, add the skill to the list and remove it from the combo.
 $("#roll-add-skill").change(addSkillChangeHandler);
+
+// Find the row in the skills table which represents this skill, and then update it to the new skill values.
+function updateSkillRow(skill)
+{
+    let tbody = $("#use-skill-table tbody");
+    let rows = tbody.find("tr").filter(
+        (i, tr) => $(tr).data("specialties").skillId == skill.id);
+    console.assert(rows.length === 1, "Skill row not found!");
+    let tr = rows[0];
+    tr.cells[1].firstElementChild.innerText = skill.value;
+    let ticksCanvas = tr.cells[2].firstElementChild.firstElementChild;
+    $(ticksCanvas).data("ticks", skill.ticks);
+    updateTicks();
+}
+
+// This is called to add a tick to a skill.  It will be done when the 'Roll' button is clicked and will output errors into the results window.
+// Returns true if successful.
+function addTickToSkill(skill)
+{
+    "use strict";
+    function showErrors(errorText)
+    {
+        let html = "<ul class='error-list'><li>" +
+            errorText +
+            "</li></ul>";
+        dieRollModal.find("#roll-error-div")
+            .html(`<div class='alert alert-danger'>${html}</div>`)
+            .show();
+    }
+
+    skill.ticks += 1;
+    if (skill.ticks >= 20) {
+        skill.ticks = 0;
+        skill.value += 1;
+    }
+
+    $.post("actions.php", {
+        action:  "updateSkill",
+        skillId: skill.id,
+        name:    skill.name,
+        value:   skill.value,
+        ticks:   skill.ticks
+    }, function (resultText) {
+        console.log("addTick: " + resultText);
+        let result = parseResult(resultText);
+        if (!result) { 
+            return false; 
+        }
+        // On error, add the errors to a box on the page.
+        if (result.success) {
+            updateSkillRow(skill);
+        } else {
+            showErrors(result.errors.join("</li><li>"));
+            return false;
+        }
+    }).fail(function (xhr, error, text) {
+        //jshint unused:true
+        showErrors("AJAX request failed: " + error + " " + text);
+        return false;
+    });
+    return true;
+}
 
 // This is called when the 'Roll' button is clicked. Set up the DieRoll object and show the results.
 function rollDiceModalHandler()
@@ -324,7 +432,7 @@ function rollDiceModalHandler()
     // Find the selected skills
     modalJSON.skills.forEach(sk => {
         let skill = charJSON.findSkill(sk.name);
-        roll.addSkill(skill.name, skill.value);
+        roll.addSkill(skill.name, skill.value, skill.ticks);
         sk.specialties.forEach(specName => {
             let specJSON = charJSON.findSpecialty(sk.name, specName);
             roll.addSpecialty(sk.name, specName, specJSON.value);
@@ -333,10 +441,21 @@ function rollDiceModalHandler()
 
     roll.extraD4s = modalJSON.extraD4s;
     roll.adds = modalJSON.adds;
-    
+    roll.addTick = dieRollModal.find("#roll-add-tick")[0].checked;
+
     // Now make the roll and record the results.
     roll.roll();
     dieRollModal.find("#roll-results").html(roll.resultAsHTML);
+
+    if (roll.addTick) {
+        let numSkills = modalJSON.skills.length;
+        console.assert(numSkills === 1, "addTick but ", numSkills, " skills!");
+        if (numSkills > 0) {
+            let skill = modalJSON.skills[0];
+            addTickToSkill(charJSON.findSkill(skill.name));
+        }
+    }
+
     dieRollModal.find("#collapse-choose").collapse('hide');
     dieRollModal.find("#collapse-results").collapse('show');
 }

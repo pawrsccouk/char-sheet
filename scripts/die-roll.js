@@ -77,17 +77,26 @@ class DieRoll {
         this.resetState();
     }
 
+    get addTick() {
+        return this._addTick;
+    }
+    set addTick(addTick) {
+        this._addTick = addTick;
+        this.resetState();
+    }
+
     /// Set of skills whose values will be rolled and included in this die roll.
     get skills() {
         return this._skills;
     }
 
     /// Add a skill to the list.
-    addSkill(name, value)
+    addSkill(name, value, ticks)
     {
         console.assert(name !== "", "All skills must have a name.");
         console.assert(Number.isInteger(value), "Skill value " + value + "is not an integer.");
-        this._skills.push( { name, value } );
+        console.assert(Number.isInteger(value), "Skill ticks " + ticks + "is not an integer.");
+        this._skills.push( { name, value, ticks } );
         this.resetState();
     }
 
@@ -186,12 +195,16 @@ class DieRoll {
         // D4 rolls.
         let dieRollsPerSkill = {};
         this.skills.forEach(skill => {
+            let d4Rolls = skill.value;
+            if (skill.ticks === 19 && this.addTick) {
+                d4Rolls += 1;
+            }
             // Zero-value skills are allowed. They roll no dice but avoid failure penalties.
-            if (skill.value === 0) {
+            if (d4Rolls === 0) {
                 dieRollsPerSkill[skill.name] = [];
             } else {
                 let sks = [];
-                for (let i = 0; i < skill.value; i++) {
+                for (let i = 0; i < d4Rolls; i++) {
                     sks.push(DieRoll.rollDie(4));
                 }
                 dieRollsPerSkill[skill.name] = sks;
@@ -273,9 +286,10 @@ class DieRoll {
         }
 
         // Now add the skill rolls.
-        if (this.skills.length > 0) {
+        let skills = this.skills;
+        if (skills.length > 0) {
             log += "<b>Skills:</b><br/>\n<div>";
-            let skillLines = this.skills.map(skill => {
+            let skillLines = skills.map(skill => {
                 console.assert(skill.name, `Skill ${skill} has no name`);
 
                 let rollsForSkill = [];
@@ -286,7 +300,7 @@ class DieRoll {
                 let specStr = "", finalTotal = 0, specs = this.specialties[skill.name];
                 if (specs) {
                     specStr = specs.map(s => `<br/><span>(+ ${s.name} = ${s.value})</span>`)
-                    .join("");
+                        .join("");
                 }
                 finalTotal += rollsForSkill.reduce((x, y) => x + y);
                 let rollsText = rollsForSkill.map(e => e.toString()).join(" + ");
@@ -299,6 +313,16 @@ class DieRoll {
                 }
             });
             log += skillLines.join("<br/>\n");
+
+            if (this.addTick) {
+                console.assert(skills.length === 1, "AddTick set and " + skills.length + " skills");
+                if (skills[0].ticks === 19) {
+                    let skill = skills[0];
+                    log += `<div style='font-weight: bold; color: blue'>
+Skill ${skill.name} levelled up to ${skill.value + 1}!
+</div>`;
+                }
+            }
             log += "</div>\n";
         }
 
@@ -366,6 +390,7 @@ class DieRoll {
         this._adds = 0;
         this._skills = [];
         this._extraD4s = 1;
+        this._addTick = false;
         this.resetState();
     }
 }
