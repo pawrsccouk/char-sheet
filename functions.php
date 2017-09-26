@@ -57,18 +57,23 @@ function load_skill_info()
     global $link;
     $the_skills = [];
     $char_id = char_id();
+    $player_id = intval($_SESSION['id']);
     if ($char_id > 0) {
         $query = <<<EOQ
-        SELECT `skill`.`id` as 'skill_id',
-        `skill`.`name` as 'skill_name',
-        `skill`.`value` as 'skill_value',
-        `skill`.`ticks` as 'skill_ticks',
-        `specialty`.`id` as 'specialty_id',
-        `specialty`.`name` as 'specialty_name',
-        `specialty`.`value` as 'specialty_value'
+        SELECT 
+            `skill`.`id` as 'skill_id',
+            `skill`.`name` as 'skill_name',
+            `skill`.`value` as 'skill_value',
+            `skill`.`ticks` as 'skill_ticks',
+            `specialty`.`id` as 'specialty_id',
+            `specialty`.`name` as 'specialty_name',
+            `specialty`.`value` as 'specialty_value'
         FROM `skill`
+        INNER JOIN `character` ON (`character`.`id` = `skill`.`parent`)
+        INNER JOIN `player` ON (`player`.`id` = `character`.`player`)
         LEFT OUTER JOIN `specialty` ON (`specialty`.`parent` = `skill`.`id`)
         WHERE `skill`.`parent` = '$char_id'
+        AND   `player`.`id` = '$player_id'
         ORDER BY `skill`.`id` ASC
 EOQ;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
@@ -102,11 +107,15 @@ function load_stats()
 {
     global $link;
     $output = [];
+    $player_id = intval($_SESSION['id']);
     $char_id = char_id();
     if ($char_id > 0) {
         $query = <<<ESQL
-            SELECT * FROM `character`
-            WHERE id = $char_id LIMIT 1
+            SELECT * FROM `character` 
+            INNER JOIN `player` ON (`player`.`id` = `character`.`player`)
+            WHERE `character`.`id` = $char_id 
+            AND `player`.`id` = $player_id
+            LIMIT 1
 ESQL;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
         if ($result->num_rows != 1) {
@@ -221,10 +230,11 @@ EOH;
 function get_characters()
 {
     global $link;
+    $player_id = intval($_SESSION['id']);
     $query = <<<EOQ
         SELECT `id`, `name`, `game` 
         FROM `character`
-        WHERE `player` = '{$link->escape_string($_SESSION['id'])}'
+        WHERE `player` = $player_id
 EOQ;
     $result = $link->query($query) or die ("Query ".$query." failed.". $link->error);
     if ($result->num_rows < 1) {
@@ -257,6 +267,32 @@ EOH;
 
 
 
+// Checks the character ID we have given matches a character we have access to.  Returns a nice message if not.
+// Terminates with die() so that subsequent functions are not called (they can leak information such as IDs if they go wrong).
+function assert_character_exists()
+{
+    global $link;
+    $char_id = char_id();
+    $player_id = intval($_SESSION['id']);
+    if ($char_id > 0) {
+        $query = <<<ESQL
+            SELECT 1
+            FROM `character`
+            INNER JOIN `player` ON (`player`.`id` = `character`.`player`)
+            WHERE `character`.`id` = $char_id 
+            AND   `player`.`id`    = $player_id
+            LIMIT 1
+ESQL;
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
+        if ($result->num_rows != 1) {
+            die ("<div class='alert alert-danger'><b>This character could not be found. Please return to the Characters page and select it again.<br/>".
+                "Contact me if you still cannot access it.</b></div>");
+        }
+    }
+    return "";
+}
+
+
 /*******************************************************************************
  * Functions used by the edit page.
  *******************************************************************************/
@@ -269,10 +305,15 @@ function get_character_attributes_edit()
 {
     global $link;
     $char_id = char_id();
+    $player_id = intval($_SESSION['id']);
     if ($char_id > 0) {
         $query = <<<ESQL
-            SELECT `name`, `game`, `age`, `gender` FROM `character`
-            WHERE id = $char_id LIMIT 1
+            SELECT `character`.`name`, `game`, `age`, `gender` 
+            FROM `character`
+            INNER JOIN `player` ON (`player`.`id` = `character`.`player`)
+            WHERE `character`.`id` = $char_id 
+            AND   `player`.`id`    = $player_id
+            LIMIT 1
 ESQL;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
         if ($result->num_rows != 1) {
@@ -469,14 +510,19 @@ function get_character_attributes_use()
 {
     global $link;
     $char_id = char_id();
+    $player_id = intval($_SESSION['id']);
     if ($char_id > 0) {
         $query = <<<ESQL
-            SELECT `character`.`name` AS 'char_name', 
-            `player`.`name` AS 'player_name',
-            `game`, `age`, `gender` 
+            SELECT 
+              `character`.`name` AS 'char_name', 
+              `player`.`name`    AS 'player_name',
+              `game`, 
+              `age`, 
+              `gender` 
             FROM `character`
             INNER JOIN `player` ON ( `player`.`id` = `character`.`player` )
             WHERE `character`.`id` = $char_id 
+            AND   `player`.`id`    = $player_id
             LIMIT 1
 ESQL;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);

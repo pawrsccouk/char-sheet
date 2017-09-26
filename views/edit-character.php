@@ -10,6 +10,9 @@
         ?>
     </div>
 
+    <!-- Check the character exists and fail with a nice error if not. -->
+    <?php echo assert_character_exists() ?>   
+
     <form id="char-form">
         <?php get_character_attributes_edit(); ?>
 

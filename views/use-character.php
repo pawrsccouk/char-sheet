@@ -13,6 +13,9 @@
         </div>
     </div>
 
+   <!-- Check the character exists and fail with an error if not. -->
+   <?php echo assert_character_exists() ?>
+   
     <!-- Top-row attributes, just name and AKA -->
     <div class="row use-attribute-row">
         <div class="col-sm-4 use-char-label">Character Name</div>
