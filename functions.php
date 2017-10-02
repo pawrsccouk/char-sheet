@@ -15,7 +15,7 @@ if ($_GET and
     session_unset();
 }
 
-// These values are switched by the fixdb.py script to point to local dev or remote production databases.
+// These values are switched by an external script when going live. They are dummy credentials for public source code.
 $DB_host = NULL;
 $DB_user = 'paw';
 $DB_password = '15t2chr2';
