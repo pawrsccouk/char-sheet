@@ -1,5 +1,5 @@
-<!-- Navigation bar across the top of each 'edit' page.
-This bar has only the 'Login' button -->
+<!-- Navigation bar across the top of each 'notes' page.
+This bar has the 'Login' button and a dropdown indicating which character to show notes for. -->
 
 <nav class="navbar navbar-toggleable-sm navbar-light bg-faded">
 
@@ -19,21 +19,14 @@ This bar has only the 'Login' button -->
     <!-- Navbar controls -->
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <!-- Plain buttons and links -->
-        <ul id='navbar-item-list' class="navbar-nav mr-auto">
+        <ul id='navbar-item-list' class="navbar-nav">
             <li class="nav-item">
                 <a class="nav-link" href="index.php">Characters</a>
             </li>
-            <li class="nav-item btn btn-primary" id="make-die-roll">Roll</li>
-            <li class="nav-item btn btn-secondary" id="reset-selections">Reset</li>
-            <li class="nav-item">
-                <?php 
-                $char_id = char_id();
-                echo "<a class='nav-link' href='index.php?page=notes&charid=$char_id'>Notes</a>"; 
-                ?>
-            </li>
         </ul>
-
-
+        <div class="form-inline mr-auto">
+            <?php get_characters("select"); ?>
+        </div>
         <!-- Login info &amp; button -->
         <div class="form-inline my-2 my-lg-0">
             <?php get_session_buttons(); ?>

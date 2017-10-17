@@ -260,3 +260,14 @@ This should be after the styles setting the label backgrounds, so it will overri
 .result .botch {
     color: red;
 }
+
+
+/**********************************************************
+ * Styles for the notes page.
+ **********************************************************/
+
+/* This will need a lot of space.  General notes textarea. */
+#notes-textarea {
+    width: 100%;
+    min-height: 200px;
+}

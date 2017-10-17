@@ -187,7 +187,7 @@ function show_attribute_row($name1, $value1, $name2, $value2)
         <div class='col-sm-3 use-char-value'>$value1</div>
 EOQ;
     if ($name2 !== NULL) {
-    echo <<<EOQ2
+        echo <<<EOQ2
         <div class='col-sm-2'>&nbsp;</div>
         <div class='col-sm-2 use-char-label'>$name2</div>    
         <div class='col-sm-3 use-char-value'>$value2</div>
@@ -227,7 +227,8 @@ EOH;
 
 
 // Displays all the characters owned by the currently logged-in player.
-function get_characters()
+// $format can be "links" (the default) to return the characters as a series of paragraphs with links to 'use' and 'edit' pages, or "select" to return them as a dropdown.
+function get_characters($format = "links")
 {
     global $link;
     $player_id = intval($_SESSION['id']);
@@ -237,14 +238,25 @@ function get_characters()
         WHERE `player` = $player_id
 EOQ;
     $result = $link->query($query) or die ("Query ".$query." failed.". $link->error);
-    if ($result->num_rows < 1) {
-        echo "You have no characters to display.";
-    } else {
+    if ($format === "select") {
+        $char_id = char_id();
+        echo "<select id='character-select'>";
         while ($row = $result->fetch_assoc()) {
-            $character_text = htmlenc($row['name']." - ".$row['game']);
             $name = htmlenc($row['name']);
-            $id = htmlenc($row['id']);
-            echo <<<EOH
+            $id = intval($row['id']);
+            $selected = ($id == $char_id) ? "selected" : "";
+            echo "<option data-id='$id' $selected>".$name."</option>";
+        }
+        echo "</select>";
+    } else {
+        if ($result->num_rows < 1) {
+            echo "You have no characters to display.";
+        } else {
+            while ($row = $result->fetch_assoc()) {
+                $character_text = htmlenc($row['name']." - ".$row['game']);
+                $name = htmlenc($row['name']);
+                $id = intval($row['id']);
+                echo <<<EOH
             <p class='character-box'>
                     <span class='character-name'>
                        $character_text
@@ -260,6 +272,7 @@ EOQ;
                     </a>
             </p>
 EOH;
+            }
         }
     }
     $result->free();
@@ -286,7 +299,7 @@ ESQL;
         $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
         if ($result->num_rows != 1) {
             die ("<div class='alert alert-danger'><b>This character could not be found. Please return to the Characters page and select it again.<br/>".
-                "Contact me if you still cannot access it.</b></div>");
+                 "Contact me if you still cannot access it.</b></div>");
         }
     }
     return "";
@@ -424,7 +437,7 @@ function get_character_skills_edit()
     $concat_spec = function ($spec) {
         return $spec['name']." +".$spec['value'];
     };
-    
+
     foreach ($the_skills as $skill_id => $skill) {
         $specs_json = json_encode((object)['array' => $skill['specialties']]);
         $specialties = implode(", ", array_map($concat_spec, $skill['specialties']));
@@ -551,7 +564,7 @@ ESQL;
 function get_character_stats_use() 
 {
     $row = load_stats();
-    
+
     echo <<<EOQ
 EOQ;
     show_stat_row("Strength", $row['strength'], "Constitution", $row['constitution']);
@@ -568,7 +581,7 @@ function get_character_skills_use()
     $concat_spec = function ($spec) {
         return $spec['name']." +".$spec['value'];
     };
-    
+
     foreach ($the_skills as $skill_id => $skill) {
         $specs_json = json_encode((object)['skillId' => $skill['id'],
                                            'array'   => $skill['specialties']]);
@@ -597,5 +610,36 @@ function get_character_skills_use()
 EOH;
     }
 }
+
+
+
+/*******************************************************************************
+ * Functions used by the notes page
+ *******************************************************************************/
+
+function get_notes()
+{
+    global $link;
+    $player_id = intval($_SESSION['id']);
+    $char_id = char_id();
+    if ($char_id > 0) {
+        $query = <<<ESQL
+            SELECT `notes` FROM `character` 
+            INNER JOIN `player` ON (`player`.`id` = `character`.`player`)
+            WHERE `character`.`id` = $char_id 
+            AND `player`.`id` = $player_id
+            LIMIT 1
+ESQL;
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
+        if ($result->num_rows != 1) {
+            die ("Query $query returned no rows.");
+        }
+        $row = $result->fetch_assoc();
+        echo htmlenc($row['notes']);
+    } else {
+        echo "";
+    }
+}
+
 
 ?>

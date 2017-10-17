@@ -32,6 +32,11 @@ if ($_SESSION and
             include('views/use-character.php');
             break;
 
+        case 'notes':
+            include('views/notes-navbar.php');
+            include('views/notes.php');
+            break;
+            
             // Default is to show the list of characters and the 'edit' version of the navbar.
         default:
             include('views/edit-navbar.php');
