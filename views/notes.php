@@ -13,15 +13,21 @@
         </div>
     </div>
 
-   <!-- Check the character exists and fail with an error if not. -->
-   <?php echo assert_character_exists() ?>
-   
+    <!-- Check the character exists and fail with an error if not. -->
+    <?php echo assert_character_exists() ?>
+
     <!-- Top-row attributes, just name and AKA -->
     <div class="section-space"></div>
 
+    <!-- This block holds the error info and is invisible by default. -->
+    <div id="notes-error-block" class="alert alert-danger hidden"></div>
+
+    <!-- This is the form with the text box on it. -->
     <div class="row">
         <form id="notes-form" class="col-md-12">
-            <textarea id="notes-textarea"><?php get_notes(); ?></textarea>
+           <?php
+                echo "<textarea id='notes-textarea' data-charId='${_GET['charid']}'>" . get_notes() . "</textarea>";
+            ?>
         </form>
     </div>
 

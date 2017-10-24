@@ -54,6 +54,11 @@ body {
     height: 1rem;
 }
 
+/* Hidden objects */
+.hidden {
+    display: none;
+}
+
 /**********************************************************
  * Styles for the 'edit character' page.
  **********************************************************/

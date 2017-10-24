@@ -617,6 +617,7 @@ EOH;
  * Functions used by the notes page
  *******************************************************************************/
 
+// Note this returns it's value instead of echoing it as it is used in a compound statement.
 function get_notes()
 {
     global $link;
@@ -635,9 +636,9 @@ ESQL;
             die ("Query $query returned no rows.");
         }
         $row = $result->fetch_assoc();
-        echo htmlenc($row['notes']);
+        return htmlenc($row['notes']);
     } else {
-        echo "";
+        return "";
     }
 }
 

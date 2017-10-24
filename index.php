@@ -70,6 +70,9 @@ switch ($page) {
         }
         echo "<script type='text/javascript' src='scripts/use-character.js'></script>\n";
         break;
+    case 'notes':
+        echo "<script type='text/javascript' src='scripts/notes.js'></script>\n";
+        break;
     default:
         break;
 }

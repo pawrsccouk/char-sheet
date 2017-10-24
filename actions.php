@@ -240,6 +240,26 @@ EOQ;
     return TRUE; // Success!
 }
 
+function update_notes($char_id, $new_notes)
+{
+    global $link, $error_log;
+    $safe_id = intval($char_id);
+    if ($safe_id < 1) {
+        $error_log[] = "Character ID ($safe_id) was invalid.";
+        return FALSE;
+    }
+    $query = <<<EOQ
+        UPDATE `character` set
+          `notes` = '{$link->escape_string($new_notes)}'
+        WHERE `id`  = $safe_id 
+        LIMIT 1
+EOQ;
+    if (!$link->query($query)) {
+        $error_log[] = "Query ".$query." failed: ".$link->error;
+        return FALSE;
+    }
+    return TRUE;
+}
 
 // This wraps the function $change_fn in a begin/commit/rollback block.
 // If $change_fn() returns NULL, the change will be rolled back, otherwise it'll be committed.
@@ -312,6 +332,10 @@ function handle_actions()
                                 $link->escape_string($_POST['name']),
                                 intval($_POST['value']), 
                                 intval($_POST['ticks'])) 
+                ? array() : NULL;
+
+        case 'updateNotes':
+            return update_notes(intval($_POST['charId']), $_POST['notes'])
                 ? array() : NULL;
 
         default:

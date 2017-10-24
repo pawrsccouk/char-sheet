@@ -27,9 +27,8 @@
 
             <div class="modal-body">
                 <div id="errors" 
-                     class='alert alert-danger' 
-                     role='alert'
-                     style="display:none">
+                     class='alert alert-danger hidden' 
+                     role='alert'>
                 </div>
                 <form>
                     <div class="form-group">
@@ -45,9 +44,8 @@
                         </small>
                     </div>
 
-                    <div class="form-group" 
-                         id="login-name-group" 
-                         style="display:none">
+                    <div class="form-group hidden" 
+                         id="login-name-group">
                         <label for="login-name">Display name</label>
                         <input type="text" 
                                class="form-control" 

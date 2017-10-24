@@ -42,7 +42,7 @@
 
         <div class="section-space">&nbsp;</div>
 
-        <div id="char-error-div" style="display:none"></div>
+        <div id="char-error-div" class="hidden"></div>
 
         <button type="submit" class="btn btn-primary big-button col-md-3">Submit</button>
     </form>

@@ -1,11 +1,10 @@
 Stuff to do
 ===========
 
+* Add 'public' and 'private' parts to characters (e.g. with background, portrait etc) and allow users to share the public parts.
 * Add a cookie to preserve the login data.
-* Add 'Notes'
 * Add 'Export to JSON/XML'
 * Add logging of last N rolls & viewing the log.
-* Add Public/Private flag
 * Add tooltips around scratch pads and/or save scratchpad data.
 
 
