@@ -34,7 +34,7 @@ function getCharacterInfo()
         let specialties = $(tr).data("specialties");
         let id = specialties.skillId;
         let name = tr.children[0].innerText;
-        let selected = tr.dataset.selected == "1" ? true : false;
+        let selected = tr.dataset.selected === "1" ? true : false;
         let value = parseInt(tr.children[1].innerText);
         // td -> center -> canvas
         let ticks = $(tr.children[2].firstElementChild.firstElementChild).data("ticks");
@@ -57,7 +57,7 @@ function getCharacterInfo()
                            "No specialty found called " + name + " for skill " + skillName);
             return match.length > 0 ? match[0] : {};
         }
-    }    
+    };    
 }
 
 // Get all the data from the 'Die Roll' modal; i.e. the selected stat, skills and specialties. This allows me to keep all the DOM-scraping in one place.
@@ -104,6 +104,7 @@ function insetBy(rect, x, y) {
 // On failure, displays the string in an alert (it is usually PHP error code intermingled with the response data if there is a compilation error in the PHP code) and returns undefined.
 function parseResult(resultText)
 {
+    "use strict";
     try {
         return JSON.parse(resultText);
     } catch (e) {
@@ -235,9 +236,9 @@ function removeSkillHandler(evt)
 
 function rowForSkill(skillJSON)
 {
+    "use strict";
     function specialtyBoxes(specsJSON) 
     {
-        "use strict";
         return specsJSON.array.map(function (spec) {
             let cbId = `roll-skill-${specsJSON.skillId}-${spec.id}`;
             return `<input type='checkbox' id='${cbId}'>
@@ -301,7 +302,7 @@ function prepareDieRollModal(modal)
 
 
     // If we have exactly one skill selected, default the ticks checkbox to checked and enable it.
-    let initTick = selectedSkills.length == 1;
+    let initTick = selectedSkills.length === 1;
     let cb = dieRollModal.find("#roll-add-tick")[0];
     cb.checked = initTick;
     cb.disabled = !initTick;
@@ -354,9 +355,10 @@ $("#roll-add-skill").change(addSkillChangeHandler);
 // Find the row in the skills table which represents this skill, and then update it to the new skill values.
 function updateSkillRow(skill)
 {
+    "use strict";
     let tbody = $("#use-skill-table tbody");
-    let rows = tbody.find("tr").filter(
-        (i, tr) => $(tr).data("specialties").skillId == skill.id);
+    let rows = tbody.find("tr").filter( // jshint unused:true
+        (i, tr) => $(tr).data("specialties").skillId === skill.id);
     console.assert(rows.length === 1, "Skill row not found!");
     let tr = rows[0];
     tr.cells[1].firstElementChild.innerText = skill.value;
