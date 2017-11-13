@@ -59,6 +59,11 @@ body {
     display: none;
 }
 
+/* Adds a space on the left of inline objects. */
+.space-left {
+    margin-left: 4em;
+}
+
 /**********************************************************
  * Styles for the 'edit character' page.
  **********************************************************/

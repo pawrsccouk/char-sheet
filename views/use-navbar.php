@@ -1,5 +1,5 @@
-<!-- Navigation bar across the top of each 'edit' page.
-This bar has only the 'Login' button -->
+<!-- Navigation bar across the top of each 'use' page.
+This contains links and action buttons -->
 
 <nav class="navbar navbar-toggleable-sm navbar-light bg-faded">
 
@@ -23,20 +23,22 @@ This bar has only the 'Login' button -->
             <li class="nav-item">
                 <a class="nav-link" href="index.php">Characters</a>
             </li>
-            <li class="nav-item btn btn-primary" id="make-die-roll">Roll</li>
-            <li class="nav-item btn btn-secondary" id="reset-selections">Reset</li>
             <li class="nav-item">
                 <?php 
                 $char_id = char_id();
                 echo "<a class='nav-link' href='index.php?page=notes&charid=$char_id'>Notes</a>"; 
                 ?>
             </li>
-            <li class="nav-item btn btn-primary" id="download-json">Download</li>
+            <li class="nav-item btn btn-primary space-left" id="make-die-roll">Roll</li>
+            <li class="nav-item btn btn-secondary" id="reset-selections">Reset</li>
+            <li class="nav-item btn btn-primary space-left" id="download-json">Download</li>
         </ul>
 
 
         <!-- Login info &amp; button -->
-        <div id='session-block' class="form-inline my-2 my-lg-0" data-charid="<?php echo char_id(); ?>">
+        <div id='session-block'
+           class="form-inline my-2 my-lg-0"
+           data-charid="<?php echo char_id(); ?>">
             <?php get_session_buttons(); ?>
         </div>
     </div>
