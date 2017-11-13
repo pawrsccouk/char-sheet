@@ -261,6 +261,32 @@ EOQ;
     return TRUE;
 }
 
+
+// Returns the data for one character as a text stream in the requested format.
+// Currently only supports $format="json".
+function export($char_id, $format)
+{
+    global $link, $error_log;
+    if ($format !== "json") {
+        $error_log[] = "Unknown format: " . $format;
+        return NULL;
+    }
+    if ($char_id <= 0) {
+        $error_log[] = "Invalid char_id: " . $char_id;
+        return NULL;
+    }
+
+    $attrs = load_attributes($char_id);
+    $stats = load_stats($char_id);
+
+    // Switch from a map keyed by ID, to an array of objects with the ID as primary attribute.
+    $skills = [];
+    foreach (load_skills($char_id) as $value) {
+        $skills[] = $value;
+    }
+    return ["jsonData" => array_merge($attrs, ["stats" => $stats], ["skills" => $skills])];
+}
+
 // This wraps the function $change_fn in a begin/commit/rollback block.
 // If $change_fn() returns NULL, the change will be rolled back, otherwise it'll be committed.
 function in_transaction($change_fn)
@@ -338,6 +364,9 @@ function handle_actions()
             return update_notes(intval($_POST['charId']), $_POST['notes'])
                 ? array() : NULL;
 
+        case 'export':
+            return export(intval($_POST['charId']), $_POST['format']);
+
         default:
             $error_log[] = "Unknown action: " . $_POST['action'];
             return NULL;
@@ -348,7 +377,7 @@ $json_result = handle_actions();
 if ($json_result === NULL) {
     $json_str = json_encode(array('success' => FALSE, 'errors' => $error_log));
 } else {
-    $json_str = json_encode(array_merge($json_result, array('success' => TRUE)));
+    $json_str = json_encode(array_merge($json_result, array('success' => TRUE)), JSON_NUMERIC_CHECK);
 }
 echo $json_str;
 ?>

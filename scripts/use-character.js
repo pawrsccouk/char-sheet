@@ -1,4 +1,4 @@
-/* globals DieRoll */
+/* globals DieRoll, saveAs */
 
 let dieRollModal = $("#die-roll-modal");
 
@@ -41,15 +41,17 @@ function getCharacterInfo()
         skills.push({ id, name, value, ticks, specialties, selected });
     });
 
+    let charid = $("#session-block").data("charid");
+
     return {
-        stats, selectedStat, skills,
-        findSkill(name) 
+        stats, selectedStat, skills, charid: charid,
+        findSkill(name)
         {
             let match = this.skills.filter(s => s.name === name);
             console.assert(match.length > 0, "No skill found called " + name);
             return match.length > 0 ? match[0] : {};
         },
-        findSpecialty(skillName, name) 
+        findSpecialty(skillName, name)
         {
             let skill = this.findSkill(skillName);
             let match = skill.specialties.array.filter(spec => spec.name === name);
@@ -123,7 +125,7 @@ function drawTicks(gc, bounds, ticks)
 {
     "use strict";
     gc.clearRect(bounds.x, bounds.y, bounds.width, bounds.height);
-    
+
     // 4 rows of 5 boxes.
     // 1 find which is smaller, width / 5, or height / 4
     let boxSize = Math.min(bounds.width / 5, bounds.height / 4);
@@ -367,20 +369,24 @@ function updateSkillRow(skill)
     updateTicks();
 }
 
+// Takes an array of errors, and displays them on a warning panel ID `contentId`.
+function showErrors(errors, contentId)
+{
+    "use strict";
+    let errorText = errors.join("</li><li>");
+    let html = "<ul class='error-list'><li>" +
+        errorText +
+        "</li></ul>";
+    dieRollModal.find(contentId)
+        .html(`<div class='alert alert-danger'>${html}</div>`)
+        .show();
+}
+
 // This is called to add a tick to a skill.  It will be done when the 'Roll' button is clicked and will output errors into the results window.
 // Returns true if successful.
 function addTickToSkill(skill)
 {
     "use strict";
-    function showErrors(errorText)
-    {
-        let html = "<ul class='error-list'><li>" +
-            errorText +
-            "</li></ul>";
-        dieRollModal.find("#roll-error-div")
-            .html(`<div class='alert alert-danger'>${html}</div>`)
-            .show();
-    }
 
     skill.ticks += 1;
     if (skill.ticks >= 20) {
@@ -404,7 +410,7 @@ function addTickToSkill(skill)
         if (result.success) {
             updateSkillRow(skill);
         } else {
-            showErrors(result.errors.join("</li><li>"));
+            showErrors(result.errors, "#roll-error-div");
             return false;
         }
     }).fail(function (xhr, error, text) {
@@ -464,6 +470,33 @@ function rollDiceModalHandler()
 
 dieRollModal.find("#die-roll-roll-dice").click(rollDiceModalHandler);
 
+// Present a JSON version to the user for backup purposes.
+$("#download-json").click(function () {
+    "use strict";
+    $.post("actions.php", {
+        action: "export",
+        format: "json",
+        charId: getCharacterInfo().charid
+    }, function (resultText) {
+        let result = parseResult(resultText);
+        if (!result) {
+            return false;
+        }
+        // On success, trigger a new download with the data provided, otherwise add the errors to a box on the page.
+        if (result.success) {
+            let blob = new Blob([JSON.stringify(result.jsonData)], {type: "application/json"});
+            saveAs(blob, result.jsonData.name + ".json");
+        } else {
+            console.log(result.errors);
+            showErrors(result.errors, "#error-div");
+            return false;
+        }
+    }).fail(function (xhr, error, text) { //jshint unused:true
+        showErrors("AJAX request failed: " + error + " " + text);
+        return false;
+    });
+    return true;
+});
 
 // Clear all selections when the 'Reset' button is clicked.
 $("#reset-selections").click(function () {

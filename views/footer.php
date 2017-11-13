@@ -3,10 +3,12 @@
         <span class="text-muted">&copy; Pat Wallace 2017, all ripoffs reserved.</span>
     </div>
 </footer>
-<!-- Bootstrap depends on jQuery -->
+<!-- Bootstrap depends on jQuery & Tether -->
 <script src="dependencies/jquery.min.js"></script>
 <script src="dependencies/tether.min.js"></script>
 <script src="dependencies/bootstrap-4a6.min.js"></script>
+<!-- Used for presenting a file to the user for saving -->
+<script src="dependencies/FileSaver.js"></script>
 
 
 <!-- a modal dialog initially hidden and used to handle login prompts -->

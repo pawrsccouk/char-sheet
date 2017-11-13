@@ -31,11 +31,12 @@ This bar has only the 'Login' button -->
                 echo "<a class='nav-link' href='index.php?page=notes&charid=$char_id'>Notes</a>"; 
                 ?>
             </li>
+            <li class="nav-item btn btn-primary" id="download-json">Download</li>
         </ul>
 
 
         <!-- Login info &amp; button -->
-        <div class="form-inline my-2 my-lg-0">
+        <div id='session-block' class="form-inline my-2 my-lg-0" data-charid="<?php echo char_id(); ?>">
             <?php get_session_buttons(); ?>
         </div>
     </div>
