@@ -16,7 +16,7 @@ if ($_GET and
 }
 
 // These values are switched by an external script when going live. They are dummy credentials for public source code.
-$DB_host = NULL;
+$DB_host = '127.0.0.1:3306';
 $DB_user = 'paw';
 $DB_password = '15t2chr2';
 $DB_database = 'charsheet';
@@ -50,13 +50,46 @@ function char_id()
     return 0;
 }
 
-// This loads the skills for the current character and returns them as an array keyed by the skill ID with the value being an array containing the values and specialties.
-// The values in the array are HTML-escaped.
-function load_skill_info()
+// Returns an array of the misellaneous attributes for a character (name, age, game etc).
+// The result is an array of name => HTML-encoded value.
+function load_attributes($char_id)
+{
+    global $link;
+    $player_id = intval($_SESSION['id']);
+    if ($char_id > 0) {
+        $query = <<<ESQL
+            SELECT `character`.`name` as 'name', 
+                    `player`.`name` as 'player', 
+                    `game`, `age`, `gender` 
+            FROM `character`
+            INNER JOIN `player` ON (`player`.`id` = `character`.`player`)
+            WHERE `character`.`id` = $char_id 
+            AND   `player`.`id`    = $player_id
+            LIMIT 1
+ESQL;
+        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
+        if ($result->num_rows != 1) {
+            die ("Query $query returned no rows.");
+        }
+        $row = $result->fetch_assoc();
+        $name = htmlenc($row['name']);
+        $game = htmlenc($row['game']);
+        $age = htmlenc($row['age']);
+        $gender = htmlenc($row['gender']);
+        $result->free();
+    } else {
+        $name = "" ; $game   = "";
+        $age  = "0"; $gender = "Other";
+    }
+    return array("name" => $name, "game" => $game, "age" => $age, "sex" => $gender);
+}
+
+
+// This loads the skills for the character ID $char_id, and returns them as an array keyed by the skill ID with the value being an array containing the values and specialties. The values in the array are HTML-escaped.
+function load_skills($char_id)
 {
     global $link;
     $the_skills = [];
-    $char_id = char_id();
     $player_id = intval($_SESSION['id']);
     if ($char_id > 0) {
         $query = <<<EOQ
@@ -102,13 +135,12 @@ EOQ;
     return $the_skills;
 }
 
-// This loads the stats for the current character and returns them in an array keyed by the stat name. The values are HTML-escaped.
-function load_stats()
+// This loads the stats for the character ID $char_id, and returns them in an array keyed by the stat name. The values are HTML-escaped.
+function load_stats($char_id)
 {
     global $link;
     $output = [];
     $player_id = intval($_SESSION['id']);
-    $char_id = char_id();
     if ($char_id > 0) {
         $query = <<<ESQL
             SELECT * FROM `character` 
@@ -310,42 +342,16 @@ ESQL;
  * Functions used by the edit page.
  *******************************************************************************/
 
-
-
 // This displays all the miscellaneous attributes for the 'edit' page.
 // E.g. name, game, age etc.
 function get_character_attributes_edit() 
 {
-    global $link;
     $char_id = char_id();
-    $player_id = intval($_SESSION['id']);
-    if ($char_id > 0) {
-        $query = <<<ESQL
-            SELECT `character`.`name`, `game`, `age`, `gender` 
-            FROM `character`
-            INNER JOIN `player` ON (`player`.`id` = `character`.`player`)
-            WHERE `character`.`id` = $char_id 
-            AND   `player`.`id`    = $player_id
-            LIMIT 1
-ESQL;
-        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
-        if ($result->num_rows != 1) {
-            die ("Query $query returned no rows.");
-        }
-        $row = $result->fetch_assoc();
-        $name = htmlenc($row['name']);
-        $game = htmlenc($row['game']);
-        $age = htmlenc($row['age']);
-        $gender = htmlenc($row['gender']);
-        $result->free();
-    } else {
-        $name = "" ; $game   = "";
-        $age  = "0"; $gender = "Other";
-    }
+    $attrs = load_attributes($char_id);
     $selected = [
-        'male'   => ($gender === "Male"   ? "selected" : ""),
-        'female' => ($gender === "Female" ? "selected" : ""),
-        'other'  => ($gender === "Other"  ? "selected" : ""),
+        'male'   => ($attrs['sex'] === "Male"   ? "selected" : ""),
+        'female' => ($attrs['sex'] === "Female" ? "selected" : ""),
+        'other'  => ($attrs['sex'] === "Other"  ? "selected" : ""),
     ];
 
     echo <<<EOS
@@ -361,7 +367,7 @@ ESQL;
                    class="form-control col-md-8" 
                    id="char-name"
                    placeholder="John Smith"
-                   value='$name'>
+                   value='{$attrs['name']}'>
         </div>
         <!-- Game -->
         <div class="form-group row">
@@ -373,7 +379,7 @@ ESQL;
                    class="form-control col-md-8"
                    id="char-game"
                    placeholder="Weird West"
-                   value='$game'>
+                   value='{$attrs['game']}'>
         </div>
         <div class="row">
             <!-- Age -->
@@ -385,7 +391,7 @@ ESQL;
                        class="form-control col-md-3"
                        id="char-age"
                        placeholder="0"
-                       value='$age'>
+                       value='{$attrs['age']}'>
             <!-- Spacer -->
             <div class="col-md-1">
                 &nbsp;
@@ -409,7 +415,7 @@ EOS;
 // This displays the stats for the current character for the 'edit' page.
 function get_character_stats_edit() 
 {
-    $row = load_stats();
+    $row = load_stats(char_id());
 
     echo <<<EOQ
     <div class='form-group row'>
@@ -432,7 +438,7 @@ EOQ2;
 // This displays the skills for the current character so the user can edit them.
 function get_character_skills_edit()
 {
-    $the_skills = load_skill_info();
+    $the_skills = load_skills(char_id());
 
     $concat_spec = function ($spec) {
         return $spec['name']." +".$spec['value'];
@@ -521,40 +527,8 @@ EOH5;
 // E.g. name, game, age etc.
 function get_character_attributes_use() 
 {
-    global $link;
-    $char_id = char_id();
-    $player_id = intval($_SESSION['id']);
-    if ($char_id > 0) {
-        $query = <<<ESQL
-            SELECT 
-              `character`.`name` AS 'char_name', 
-              `player`.`name`    AS 'player_name',
-              `game`, 
-              `age`, 
-              `gender` 
-            FROM `character`
-            INNER JOIN `player` ON ( `player`.`id` = `character`.`player` )
-            WHERE `character`.`id` = $char_id 
-            AND   `player`.`id`    = $player_id
-            LIMIT 1
-ESQL;
-        $result = $link->query($query) or die ("Query ".$query." failed!". $link->error);
-        if ($result->num_rows != 1) {
-            die ("Query $query returned no rows.");
-        }
-        $row = $result->fetch_assoc();
-        $name = htmlenc($row['char_name']);
-        $game = htmlenc($row['game']);
-        $age = htmlenc($row['age']);
-        $gender = htmlenc($row['gender']);
-        $player = htmlenc($row['player_name']);
-        $result->free();
-    } else {
-        $name = "" ; $game   = ""; $player = "";
-        $age  = "0"; $gender = "Other";
-    }
-    show_attribute_row('Player', $player, 'Game', $game);
-    show_attribute_row('Age', $age, 'Gender', $gender);
+    $attrs = load_attributes(char_id());
+    show_attribute_row('Age', $attrs['age'], 'Sex', $attrs['sex']);
     show_attribute_row('Height', '', 'Weight', '');
     show_attribute_row('Hair', '', 'Eyes', '');
     show_attribute_row('Handed', '', NULL, NULL);
@@ -563,7 +537,7 @@ ESQL;
 // This displays the stats for the current character for the 'use' page.
 function get_character_stats_use() 
 {
-    $row = load_stats();
+    $row = load_stats(char_id());
 
     echo <<<EOQ
 EOQ;
@@ -576,7 +550,7 @@ EOQ;
 // This displays the skills for the current character for the 'use' page.
 function get_character_skills_use()
 {
-    $the_skills = load_skill_info();
+    $the_skills = load_skills(char_id());
 
     $concat_spec = function ($spec) {
         return $spec['name']." +".$spec['value'];
